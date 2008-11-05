@@ -1,0 +1,10 @@
+<% @side_bar_template_name = "shared/sidebar_login" %>
+<% @page_title = "Log in" %>
+
+<ul>
+<li>You can make your own calendar by logining.</li>
+<li>Make sure this is a BETA application. There is possibly something WRONG.</li>
+<li>So you had better avoid writing private or important things.</li>
+<li>When your private todos flow out unfortunately, I can't do nothing without apologizing that, Sorry.</li>
+</ul>
+

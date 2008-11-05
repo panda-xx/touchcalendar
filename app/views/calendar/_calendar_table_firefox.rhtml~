@@ -1,0 +1,74 @@
+<tbody>
+<caption><%= @nextDate.year %>/<%= @nextDate.strftime("%m") %></caption>
+<tr>
+    <td class="wday"><div class="wday">Sun</div></td>
+    <td class="wday"><div class="wday">Mon</div></td>
+    <td class="wday"><div class="wday">Tue</div></td>
+    <td class="wday"><div class="wday">Wed</div></td>
+    <td class="wday"><div class="wday">Thu</div></td>
+    <td class="wday"><div class="wday">Fri</div></td>
+    <td class="wday"><div class="wday">Sat</div></td>
+</tr>
+
+
+<% i = 0 %>
+<% @dates.each do |date| %>
+    <% if  date.wday == 0 %>
+	    <tr>
+    <% end %>
+    <% i = i + 1 %>
+
+    <% if date.month != @nextDate.month %>
+        <td class="todo" style="border-color:#CFCFCF"
+            ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                        doubleClickPositionX = event.clientX;
+                        doubleClickPositionY = event.clientY;"
+            onMouseOver="style.borderColor='#99FF66'"
+            onMouseOut="style.borderColor='#CFCFCF'">
+    <% elsif date.wday == 6 %>
+        <td class="todo" style="background-color:#B0E2FF;border-color:#B0E2FF"
+            ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                        doubleClickPositionX = event.clientX;
+                        doubleClickPositionY = event.clientY;"
+            onMouseOver="style.borderColor='#99FF66'"
+            onMouseOut="style.borderColor='#B0E2FF'">
+    <% elsif date.wday == 0 %>
+        <td class="todo" style="background-color:#FFD39B;border-color:#FFD39B"
+            ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                        doubleClickPositionX = event.clientX;
+                        doubleClickPositionY = event.clientY;"
+            onMouseOver="style.borderColor='#99FF66'"
+            onMouseOut="style.borderColor='#FFD39B'">
+    <% else %>
+        <td class="todo" style="background-color:white;border-color:black"
+            ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                        doubleClickPositionX = event.clientX;
+                        doubleClickPositionY = event.clientY;"
+            onMouseOver="style.borderColor='#99FF66'"
+            onMouseOut="style.borderColor='black'">
+    <% end %>
+
+    <%= date.day %><br>
+    <% if date.month == @nextDate.month %>
+        <div id="todo<%= date.strftime("%Y%m%d") %>" class="todo"><nobr>　<%= @todos[i] %></nobr></div>
+    <% else %>
+        <div id="another_todo<%= date.strftime("%Y%m%d") %>" class="todo"><nobr>　<%= @todos[i] %></nobr></div>
+    <% end %>
+    </td>
+
+    <% if  date.wday == 6 %>
+	    </tr>
+    <% end %>
+<% end %>
+</tbody>
+
+<!-- テーブルのtd要素の高さを調整する 
+     この位置で調整すれば、必ずtd要素が生成された後に
+     調整できる。ここ以外だと、td要素が生成されてないのに
+     調整を行おうとして失敗してしまうことがある。
+-->
+<script type="text/javascript" >
+	// td の高さ調整する
+    calendarSizeArranger('<%= @nextDate.year %>' + '<%= @nextDate.strftime("%m") %>');
+</script>
+

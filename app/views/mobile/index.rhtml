@@ -1,0 +1,31 @@
+<%= @today.strftime("%Y/%m/%d(%a)") %>の予定<br>
+<table class="mobile"><tbody>
+<% i = 0 %>
+<% @todo.each do |todo| %>
+    <% if i % 2 == 0 %>
+    <tr class="blue">
+    <% else %>
+    <tr>
+    <% end %>
+    <td><%= todo.text %></td><td class="delete"><%= link_to ('x', :action => 'delete', :id => todo.id.to_s + @today.strftime("%Y%m%d")) %></td>
+    </tr>
+    <% i = i + 1 %>
+<% end %>
+<% if i == 0 %>
+    <tr><td>今日の予定はありません。</td></tr>
+<% end %>
+</tbody></table>
+<table class="mobile"><tbody>
+    <tr><td class="before"><%= link_to ('前日へ', :action => 'index', :id => (@today - 86400).strftime("%Y%m%d")) %></td>
+    <td class="next"><%= link_to ('翌日へ', :action => 'index', :id => (@today + 86400).strftime("%Y%m%d")) %></td></tr>
+</tbody></table>
+<% form_tag :action =>'create', :id => @today.strftime("%Y%m%d")  do %>
+	<table>
+		<tr><td>Todo</td><td><%= text_field_tag 'todo_text' , '' %></td></tr>
+		<tr><td>日付</td><td><%= select_tag 'limit_date', @date_options %></td></tr>
+        <tr><td></td><td><%= submit_tag 'Todo登録' %></td></tr>
+	</table>
+<% end %>    
+<%= flash[:notice] %><br>
+
+

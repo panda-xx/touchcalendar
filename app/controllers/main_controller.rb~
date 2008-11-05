@@ -1,0 +1,63 @@
+class MainController < ApplicationController
+  def top
+    @member = Member.new(params[:member])
+    unless @current_user
+    else
+      redirect_to :controller => "/member", :action => 'g_calendar'
+    end
+  end
+
+  def registration
+    @member = Member.new()
+    unless @current_user
+    else
+      redirect_to :controller => "/member", :action => 'top'
+    end
+  end
+
+  def create
+    @member = Member.new(params[:member])
+    if @member.login_name == ''
+      flash[:warning] = "Enter user name."
+      redirect_to :action => 'registration'
+      return
+    end
+    
+    old_members = Member.find(:all)
+    old_members.each{|old_member|
+        if old_member.login_name == @member.login_name
+          flash[:warning] = @member.login_name + " is already used."
+          redirect_to :action => 'registration'
+          return
+        end        
+    }
+    @member.kind = ''
+    if @member.save
+      flash[:notice] = 'Added a user'
+      redirect_to :action => 'top'
+    else
+      flash[:warning] = "The passwords are not the same."
+      render :action => 'registration'
+    end
+  end
+
+
+  # 展開(編集モード)
+  def expand
+    render :update do |page|
+      page.replace_html( "expand",
+        :locals => {:task => task, :errors => task.errors} )
+      page.visual_effect( :grow, task_id, :duration => 1.0 )
+    end
+  end
+
+  # 更新(付箋に戻す)
+  def update
+    render :update do |page|
+      page.replace_html( "stickey", :locals => {:task => task} )
+      page.visual_effect( :slideDown, task_id, :duration => 0.5 )
+    end
+  end
+
+
+end

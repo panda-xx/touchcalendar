@@ -1,0 +1,190 @@
+<div id="popClose"><a href="javascript:dayDisplayClose()">Close</a></div>
+<div id="popDays">
+<% 15.times {|i| %>
+    <div id="<%= @nextDays[i].strftime("%Y%m%d") %>" class="popDay">
+    <%= @nextDays[i].year %>/<%= @nextDays[i].strftime("%m") %>/<%= @nextDays[i].strftime("%d") %><br>
+    <input id="text<%= @nextDays[i].strftime("%Y%m%d") %>" style="text" width="300px" onkeydown="
+        if (event.keyCode == Event.KEY_RETURN){$('button<%= @nextDays[i].strftime("%Y%m%d") %>').onclick();};"></input>
+    <input id="button<%= @nextDays[i].strftime("%Y%m%d") %>" type="button" value="add Todo" onclick="
+        queryStr = $('text' + '<%= @nextDays[i].strftime("%Y%m%d") %>').value;
+        if (queryStr == '' || this.value == 'adding...'){
+            return;
+        }
+        $('text' + '<%= @nextDays[i].strftime("%Y%m%d") %>').value = '';
+        this.value = 'adding...';
+        queryStr = 'todo_text=' + queryStr;
+        $('tmp<%= @nextDays[i].strftime("%Y%m%d") %>').innerHTML = '';
+        new Ajax.Updater('tmp<%= @nextDays[i].strftime("%Y%m%d") %>',
+                         '/calendar/create/' + '<%= @nextDays[i].strftime("%Y%m%d") %>' + '?' + encodeURI(queryStr),
+                          {asynchronous : true,
+                           evalScripts  : true, 
+                           parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        new Ajax.Updater('todo<%= @nextDays[i].strftime("%Y%m%d") %>',
+                         '/calendar/reload_todo/<%= @nextDays[i].strftime("%Y%m%d") %>',
+                          {asynchronous : true,
+                           evalScripts  : true, 
+                           parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        if ($('another_todo<%= @nextDays[i].strftime("%Y%m%d") %>') != null){
+            new Ajax.Updater('another_todo<%= @nextDays[i].strftime("%Y%m%d") %>',
+                             '/calendar/reload_todo/<%= @nextDays[i].strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        }">
+        
+    </input><br>
+    <table id="table<%= @nextDays[i].strftime("%Y%m%d") %>" style="width:100%;"><tBody>
+    <% j = 0 %>
+    <% for @todo in @nextTodos[i] -%>
+	    <% if j % 2 == 0 %>
+	    <tr style='background-color:#E5ECF9;'>
+        <% else %>
+	    <tr style=''>
+        <% end %>
+	    <td style=''><%= in_place_text_field( :todo, :text  , { :save_text=>"Save", :cancel_text=>"Cancel" }) %></td>
+	    <td width='15px' style='text-align:center;cursor:pointer;' onclick="
+            new Ajax.Updater('tmp<%= @nextDays[i].strftime("%Y%m%d") %>',
+                             '/calendar/delete/' + '<%= @todo.id %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+            this.parentNode.parentNode.removeChild(this.parentNode);
+            arrangeRowColor('table<%= @nextDays[i].strftime("%Y%m%d") %>');
+            var divHeight = parseFloat(Element.getStyle($('<%= @nextDays[i].strftime("%Y%m%d") %>'), 'height'));
+            if ( divHeight >  popupHeight ){ 
+                popupDayHeights[currentDayNum] = divHeight;
+                Element.setStyle($('dayDisplay'), {'height' : divHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(divHeight);
+            } else {
+                popupDayHeightsWriter(popupHeight);
+                Element.setStyle($('dayDisplay'), {'height' : popupHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(popupHeight);
+            }
+            new Ajax.Updater('todo<%= @nextDays[i].strftime("%Y%m%d") %>',
+                             '/calendar/reload_todo/<%= @nextDays[i].strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+            if ($('another_todo<%= @nextDays[i].strftime("%Y%m%d") %>') != null){
+                new Ajax.Updater('another_todo<%= @nextDays[i].strftime("%Y%m%d") %>',
+                                 '/calendar/reload_todo/<%= @nextDays[i].strftime("%Y%m%d") %>',
+                                  {asynchronous : true,
+                                   evalScripts  : true, 
+                                   parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                                  }
+                                 );
+            }">
+        x</td>
+	    </tr>
+        <% j = j + 1 %>
+    <% end %>
+    </tBody></table>
+    <div id='tmp<%= @nextDays[i].strftime("%Y%m%d") %>'></div>
+    </div>
+<% } %>
+</div>
+
+
+<script type="text/javascript" >
+
+    popupMinDay = "<%= @nextDays[0].strftime("%Y%m%d") %>";
+    popupMaxDay = "<%= @nextDays[14].strftime("%Y%m%d") %>";
+	// 高さ調整する
+	Element.setStyle($('popDays'),
+	      {"left"  : - popupWidth * 7 + "px",
+	       "top"   : "0px"});
+	Element.setStyle($('popClose'),
+	      {"left" : popupWidth - parseFloat(Element.getStyle($('popClose'), "width")) + "px"});
+	var displayHeight = 0;
+<% 15.times {|i| %>
+	Element.setStyle($('<%= @nextDays[i].strftime("%Y%m%d") %>'),
+	      {
+	       "width" : popupWidth  + "px",
+           "top"   : "0px",
+           "left"  : popupWidth * <%= i %> + "px"});
+    if ( parseFloat(Element.getStyle($('<%= @nextDays[i].strftime("%Y%m%d") %>'), "height")) > popupHeight ){ 
+        popupDayHeightsWriter(parseFloat(Element.getStyle($('<%= @nextDays[i].strftime("%Y%m%d") %>'), "height")));
+    } else {
+        popupDayHeightsWriter(popupHeight);
+    }
+<% } %>
+                      
+    // 吹き出しの中身調整
+    var tmpTop;
+    var tmpLeft;
+    if(navigator.userAgent.indexOf("Gecko") != -1) {
+        tmpTop   = (parseFloat(window.innerHeight) * 0.95 - 60) * 0.3;
+        tmpLeft  = parseFloat(window.innerWidth)   * 0.95 * 0.15;
+    } else {
+        if (document.body.clientHeight){
+            tmpTop   = (parseFloat(document.body.clientHeight) * 0.95 - 60) * 0.3;
+            tmpLeft  = parseFloat(document.body.clientWidth)   * 0.95 * 0.15;
+        } else {
+            tmpTop   = (parseFloat(document.body.parentElement.clientHeight) * 0.95 - 60) * 0.3;
+            tmpLeft  = parseFloat(document.body.parentElement.clientWidth)   * 0.95 * 0.15;
+        }
+    }
+    if (tmpTop < 0) tmpTop = 0.0;
+    // 0.000001よりも桁が小さい値だと、setStyleするときにエラーになる（値が設定されない）ので、値を手動で丸める
+    tmpTop   = Math.floor(tmpTop *  100000) / 100000;
+    tmpLeft  = Math.floor(tmpLeft *  100000) / 100000;
+
+    // div#calendar も位置を移動させる
+    elementMover('calendar', 
+                 - doubleClickPositionX + tmpLeft + parseFloat(Element.getStyle($('baloon_left'), "width")) ,
+                 - doubleClickPositionY + tmpTop - parseFloat(Element.getStyle($('baloon_top'), "height")) / 1.3, 100);
+
+
+    // div#calendarが移動完了してから吹き出しを出すためのタイマー
+	var strFunc = "" + 
+        "var movingFlag = true;" + 
+        "for (var i = 0; i < objStrArray.length; i++){" +
+            "if (objStrArray[i] == 'calendar'){" +
+                "movingFlag = false;" + 
+                "break;" +
+            "}" +
+        "}" +
+        "if ( movingFlag == true ){" +
+            "Element.setStyle($('dayDisplay')," +
+                    "{'height' : popupDayHeights[currentDayNum] + 'px'," +
+                     "'width'  : popupWidth + 'px'," +
+                     "'top'    : " + tmpTop + " + 'px'," +
+                     "'left'   : " + tmpLeft + " + 'px'});" +
+            "popupBaloon(parseFloat(Element.getStyle($('dayDisplay'), 'top'))," +
+                        "parseFloat(Element.getStyle($('dayDisplay'), 'left')) +" +
+                        "parseFloat(Element.getStyle($('dayDisplay'), 'width'))," + 
+                        "parseFloat(Element.getStyle($('dayDisplay'), 'top')) +" + 
+                        "parseFloat(Element.getStyle($('dayDisplay'), 'height'))," + 
+                        "parseFloat(Element.getStyle($('dayDisplay'), 'left')));" +
+            "baloonMakingFlag = false;" +
+		    "clearInterval(baloonAppearFlag);" +
+		"};"
+
+    baloonAppearFlag = setInterval( strFunc , 100);
+/*
+    Element.setStyle($('dayDisplay'),
+            {"height" : popupDayHeights[currentDayNum] + "px",
+             "width"  : popupWidth + "px",
+             "top"    : tmpTop + "px",
+             "left"   : tmpLeft + "px"});
+    popupBaloon(parseFloat(Element.getStyle($('dayDisplay'), 'top')), 
+                parseFloat(Element.getStyle($('dayDisplay'), 'left')) + parseFloat(Element.getStyle($('dayDisplay'), 'width')), 
+                parseFloat(Element.getStyle($('dayDisplay'), 'top')) + parseFloat(Element.getStyle($('dayDisplay'), 'height')), 
+                parseFloat(Element.getStyle($('dayDisplay'), 'left')));
+*/
+//    elementHeightChanger('dayDisplay', 0, popupDayHeights[currentDayNum], 200);
+
+</script>
+

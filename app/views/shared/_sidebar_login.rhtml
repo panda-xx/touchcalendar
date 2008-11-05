@@ -1,0 +1,35 @@
+<h3>Login</h3>
+<% if flash[:warning] %>
+<div style="color:red"><%= flash[:warning] %></div>
+
+<% end %>
+
+
+<% unless @current_user -%>
+<div style="color:red"><%= flash[:notice] %></div>
+  <% form_tag '/login/login', :method => 'post' do %>
+    <%= hidden_field_tag 'from', request.request_uri %>
+<table>
+<tr>
+<td style="text-align:left">User Name:</td>
+</tr>
+<tr>
+<td style="align:right"><%= text_field_tag 'login_name', flash[:login_name],
+                :size => 16 %></td>
+</tr>
+<tr>
+<td style="text-align:left">Password:</td>
+</tr>
+<tr>
+<td style="align:right"><%= password_field_tag 'password', '',
+                :size => 16 %></td>
+</tr>
+<tr>
+<td style="text-align:right"><%= submit_tag 'Log in' %></td>
+</tr>
+</table>
+        
+  <% end %>
+<% end -%>
+
+<%= link_to("New Registration", :controller => "main", :action => "registration") %>

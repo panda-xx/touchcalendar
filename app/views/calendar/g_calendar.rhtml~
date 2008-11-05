@@ -1,0 +1,332 @@
+<% @page_title = "ToDo Calendar" %>
+
+
+<script type="text/javascript" ><!--
+    var mouseHandler;
+    var calendarWidth;
+    var calendarHeight;
+    var windowWidth;
+    var windowHeight;
+    var centralCalendarId;
+    var nextCentralCalendarId;
+    var authToken;
+    // ホイールで拡大するかどうか。falseならポップアップの上下移動
+    var isWheelZoom = true;
+    // ポップアップされた日付の最大値と最小値
+    var popupMaxDay;
+    var popupMinDay;
+    // ポップアップの幅と高さ
+    var popupWidth;
+    var popupHeight;
+    // ポップアップの次週読み込みしきい値
+    var popupReadNextValue;
+    var popupReadBeforeValue;
+    // ポップアップ次週読み込み時に使用する。以前のカレンダーを退避させるために使う
+    var hideOldDays;
+    // ポップアップ枠（div#dayDisplay）の高さを適切な高さに変化させるための変数たち
+    var currentDayNum = 7;
+    var popupDayHeights = new Array();
+    // 初期読み込み判定（NowLoading...　の表示を消すために使う。setIntervalの戻り値が入る）
+    var nowLoadingFlag;
+    // 吹き出し読み込み判定（吹き出しを出すタイミングを決めるために使う。setIntervalの戻り値が入る）
+    var baloonAppearFlag;
+    // ダブルクリックで吹き出しを作成中であることを示すフラグ
+    var baloonMakingFlag = false;
+    // ダブルクリックしたときの座標
+    var doubleClickPositionX;
+    var doubleClickPositionY;
+/****************************
+ * window.onload            *
+ ****************************/
+window.onload=function(){
+    // セッションのトークンを取得する
+    authToken = "<%= form_authenticity_token %>";
+
+    // 中心年月のカレンダーIDを取得する
+    centralCalendarId = "<%= @today.year %><%= @today.strftime("%m") %>";
+
+    // 描画領域を取得する
+	if(navigator.userAgent.indexOf("Gecko") != -1)	{
+        windowWidth = parseFloat(window.innerWidth);
+        windowHeight = parseFloat(window.innerHeight);
+	    calendarWidth = windowWidth * 0.95;
+	    calendarHeight = (windowHeight - 60) * 0.95;
+    } else {
+        if (document.body.clientHeight){
+	        windowWidth = parseFloat(document.body.clientWidth);
+	        windowHeight = parseFloat(document.body.clientHeight);
+        } else {
+            windowWidth = parseFloat(document.body.parentElement.clientWidth);
+	        windowHeight = parseFloat(document.body.parentElement.clientHeight);
+        }
+        calendarWidth = windowWidth * 0.95;
+        calendarHeight = (windowHeight - 60) * 0.95;
+    }
+    // ポップアップ用のウィンドウサイズを設定する
+    popupWidth = calendarWidth * 0.70;
+    popupHeight = calendarHeight * 0.50;
+    if (popupHeight < 0) popupHeight = 60.0;
+
+    // 0.000001よりも小さい値だと、setStyleするときにエラーになる（値が設定されない）ので、値を手動で丸める
+    popupWidth = Math.floor(popupWidth * 100000) / 100000;
+    popupHeight   = Math.floor(popupHeight *  100000) / 100000;
+
+    // 次週を読み込むしきい値を設定する
+    popupReadNextValue = - popupWidth * 14;
+    popupReadBeforeValue = 0;
+
+    mouseHandler = new MovingHandlers();
+
+    // このページだけスクロールバーをなくす
+
+	Element.setStyle($('container').up(1),  {"overflow": "hidden"});
+	Element.setStyle($('container').up(0),  {"background-color": "white",
+                                            "color": "black",
+                                            "margin": 0,
+                                            "padding": 0,
+                                            "overflow": "hidden"});
+    Event.observe(document, "mousewheel", wheelHandler,false);
+    Event.observe(document, "DOMMouseScroll", wheelHandler,false);
+    
+    // div#right のLeftを、gcalendar用に修正
+	Element.setStyle($('right'),  {"left": "0px", "top" : "20px"});
+    
+    // ドラッグできるようにする　+　大きさと位置を調整する
+	var all = $("right").getElementsByTagName('table');
+    for (var i = 0; i < 3; i++) {
+        Element.setStyle(all[i],  {"left"  :   calendarWidth / 0.95 * (i - 1) + calendarWidth * 0.025 + "px",
+                                  "top"   : - calendarHeight / 0.95 + calendarHeight * 0.025 + "px", 
+                                  "width" :   calendarWidth + "px"});
+    }
+    for (var i = 3; i < 6; i++) {
+        Element.setStyle(all[i],  { 
+                         "width" :   calendarWidth + "px",
+                         "left"  :   calendarWidth / 0.95 * (i - 4) + calendarWidth * 0.025 + "px",
+                         "top"   :   calendarHeight * 0.025 + "0px"
+                         });
+    }
+    for (var i = 6; i < 9; i++) {
+        Element.setStyle(all[i],  { 
+                         "width" :   calendarWidth + "px",
+                         "left"  :   calendarWidth / 0.95 * (i - 7) + calendarWidth * 0.025 + "px",
+                         "top"   :   calendarHeight / 0.95 + calendarHeight * 0.025 + "px"
+                         });
+    }
+    mouseHandler.add("calendar");
+    calendarSizeArranger('calendar');
+
+    // 縮小率を設定する
+    var reduction = 0.1;
+    // 吹き出しの初期設定を行う
+    Element.setStyle($('baloon_top'),
+                     {"height" : parseFloat(Element.getStyle($('baloon_top'), "height")) * reduction + "px",
+                      "width"  : 0 + "px"
+                      });
+    Element.setStyle($('baloon_right'),
+                     {"width"  : parseFloat(Element.getStyle($('baloon_right'), "width")) * reduction + "px",
+                      "height"  : 0 + "px"
+                      });
+    Element.setStyle($('baloon_bottom'),
+                     {"height" : parseFloat(Element.getStyle($('baloon_bottom'), "height")) * reduction + "px",
+                      "width"  : 0 + "px"
+                      });
+    Element.setStyle($('baloon_left'),
+                     {"width"  : parseFloat(Element.getStyle($('baloon_left'), "width")) * reduction + "px",
+                      "height"  : 0 + "px"
+                      });
+
+    Element.setStyle($('baloon_top_left'),
+                     {"top"    : - 100 + "px",
+                      "left"   : - 100 + "px",
+                      "width"  : parseFloat(Element.getStyle($('baloon_top_left'), "width")) * reduction + "px",
+                      "height" : parseFloat(Element.getStyle($('baloon_top_left'), "height")) * reduction + "px"
+                      });
+    Element.setStyle($('baloon_top_right'),
+                     {"top"    : - 100 + "px",
+                      "left"   : - 100 + "px",
+                      "width"  : parseFloat(Element.getStyle($('baloon_top_right'), "width")) * reduction + "px",
+                      "height" : parseFloat(Element.getStyle($('baloon_top_right'), "height")) * reduction + "px"
+                      });
+    Element.setStyle($('baloon_bottom_right'),
+                     {"top"    : - 100 + "px",
+                      "left"   : - 100 + "px",
+                      "width"  : parseFloat(Element.getStyle($('baloon_bottom_right'), "width")) * reduction + "px",
+                      "height" : parseFloat(Element.getStyle($('baloon_bottom_right'), "height")) * reduction + "px"
+                      });
+    Element.setStyle($('baloon_bottom_left'),
+                     {"top"    : - 100 + "px",
+                      "left"   : - 100 + "px",
+                      "width"  : parseFloat(Element.getStyle($('baloon_bottom_left'), "width")) * reduction + "px",
+                      "height" : parseFloat(Element.getStyle($('baloon_bottom_left'), "height")) * reduction + "px"
+                      });
+    Element.setStyle($('baloon_shadow'),
+                     {"top"    : - 100 + "px",
+                      "left"   : - 100 + "px",
+                      "width"  : 0 + "px",
+                      "height" : 0 + "px"
+                      });
+    // Now Loading 表示を消すためのタイマー
+	var strFunc = "" + 
+	        "if ($('calendar').style.top != '0px'){" +
+    			"clearInterval(nowLoadingFlag);" +
+                "$('nowLoading').parentNode.removeChild($('nowLoading'));" +
+	        "}";
+    nowLoadingFlag = setInterval( strFunc , 100);
+
+        var t = document.createElement('div');
+        t.id = 'helpBaloon';
+        t.style.right = '0px';
+        t.style.top = '30px';
+        t.style.width = '300px';
+        t.style.height = '200px';
+        t.style.zIndex = 100;
+        t.style.borderStyle = 'dotted';
+        t.style.borderWidth = '3px';
+        t.style.backgroundColor = 'white';
+        t.style.color = '#5E8EAB';
+        t.style.textAlign = 'center';
+        t.style.position = 'absolute';
+        $('container').appendChild(t);
+        $('helpBaloon').parentNode.removeChild($('helpBaloon'));
+
+
+}
+
+/**********************************************************
+ *    ウィンドウサイズが変わったときにカレンダサイズを変える  *
+ **********************************************************/
+window.onresize=function(){
+
+    // 描画領域を取得する
+	if(navigator.userAgent.indexOf("Gecko") != -1)	{
+        windowWidth = parseFloat(window.innerWidth);
+        windowHeight = parseFloat(window.innerHeight);
+    } else {
+        if (document.body.clientHeight){
+	        windowWidth = parseFloat(document.body.clientWidth);
+	        windowHeight = parseFloat(document.body.clientHeight);
+        } else {
+            windowWidth = parseFloat(document.body.parentElement.clientWidth);
+	        windowHeight = parseFloat(document.body.parentElement.clientHeight);
+        }
+    }
+
+/*
+    if ($('dayDisplay') == null){
+        return;
+    }
+    if(navigator.userAgent.indexOf("Gecko") != -1)	{
+        popupWidth = parseFloat(window.innerWidth) * 0.95 * 0.70;
+        popupHeight = (parseFloat(window.innerHeight) * 0.95 - 60) * 0.50;
+    } else {
+        popupWidth = parseFloat(document.body.clientWidth) * 0.95 * 0.70;
+        popupHeight = (parseFloat(document.body.clientHeight) * 0.95 - 60) * 0.50;
+    }
+    if (popupHeight < 0) popupHeight = 60.0;
+
+    // 0.000001よりも小さい値だと、setStyleするときにエラーになる（値が設定されない）ので、値を手動で丸める
+    popupWidth = Math.floor(popupWidth * 100000) / 100000;
+    popupHeight   = Math.floor(popupHeight *  100000) / 100000;
+
+    Element.setStyle($('dayDisplay'),
+            {
+             "width"  : popupWidth + "px",
+             "top"    : Math.floor(popupHeight / 0.50 * 0.25 * 100000) / 100000 + "px",
+             "left"   : Math.floor(popupWidth  / 0.70 * 0.15 * 100000) / 100000 + "px"});
+*/
+}
+
+
+--></script>
+<div id="nowLoading">Now Loading...</div>
+<div id='baloonFrame'>
+    <img id='baloon_top'          src="/images/baloon_top.gif"          style="">
+    <img id='baloon_bottom'       src="/images/baloon_bottom.gif"       style="">
+    <img id='baloon_left'         src="/images/baloon_left.gif"         style="">
+    <img id='baloon_right'        src="/images/baloon_right.gif"        style="">
+    <img id='baloon_top_left'     src="/images/baloon_top_left.gif"     style="">
+    <img id='baloon_top_right'    src="/images/baloon_top_right.gif"    style="">
+    <img id='baloon_bottom_right' src="/images/baloon_bottom_right.gif" style="">
+    <img id='baloon_bottom_left'  src="/images/baloon_bottom_left.gif"  style="">
+    <img id='baloon_shadow'       src="/images/baloon_shadow.gif"       style="filter:alpha(opacity=25); -moz-opacity:0.25; opacity:0.25;">
+</div>
+<!-- 以下、カレンダー -->
+<div id="calendar" left="0px" top="0px">
+<% @todos.each do |asdf| %>
+    <table id="<%= asdf[0][7].year %><%= asdf[0][7].strftime("%m") %>" class="month">
+    <caption style="align:top;text-align:center;" ><%= asdf[0][7].year %>/<%= asdf[0][7].strftime("%m") %></caption>
+
+    <tbody>
+    <tr>
+        <td class="wday"><div class="wday">Sun</div></td>
+        <td class="wday"><div class="wday">Mon</div></td>
+        <td class="wday"><div class="wday">Tue</div></td>
+        <td class="wday"><div class="wday">Wed</div></td>
+        <td class="wday"><div class="wday">Thu</div></td>
+        <td class="wday"><div class="wday">Fri</div></td>
+        <td class="wday"><div class="wday">Sat</div></td>
+    </tr>
+    <% i = 0 %>
+    <% asdf[0].each do |date| %>
+        <% if  date.wday == 0 %>
+            <tr>
+        <% end %>
+            
+        <% if date == @today %>
+            <td class="todo" onSelectStart="return false;" style="background-color:#FFFF00;border-color:#FFFF00"
+                ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                            doubleClickPositionX = event.clientX;
+                            doubleClickPositionY = event.clientY;"
+                onMouseOver="style.borderColor='#99FF66';"
+                onMouseOut="style.borderColor='#FFFF00';">
+        <% else %>
+            <% if date.month != asdf[0][7].month %>
+                <td class="todo" onSelectStart="return false;"  style="border-color:#CFCFCF"
+                    ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                                doubleClickPositionX = event.clientX;
+                                doubleClickPositionY = event.clientY;"
+                    onMouseOver="style.borderColor='#99FF66'"
+                    onMouseOut="style.borderColor='#CFCFCF'">
+            <% elsif date.wday == 6 %>
+                <td class="todo"  onSelectStart="return false;" style="background-color:#B0E2FF;border-color:#B0E2FF"
+                    ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                                doubleClickPositionX = event.clientX;
+                                doubleClickPositionY = event.clientY;"
+                    onMouseOver="style.borderColor='#99FF66'"
+                    onMouseOut="style.borderColor='#B0E2FF'">
+            <% elsif date.wday == 0 %>
+                <td class="todo"  onSelectStart="return false;" style="background-color:#FFD39B;border-color:#FFD39B"
+                    ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                                doubleClickPositionX = event.clientX;
+                                doubleClickPositionY = event.clientY;"
+                    onMouseOver="style.borderColor='#99FF66'"
+                    onMouseOut="style.borderColor='#FFD39B'">
+            <% else %>
+                <td class="todo"  onSelectStart="return false;" style="background-color:white;border-color:black"
+                    ondblclick="dayDisplayPopup(<%= date.strftime('%Y%m%d') %>);
+                                doubleClickPositionX = event.clientX;
+                                doubleClickPositionY = event.clientY;"
+                    onMouseOver="style.borderColor='#99FF66'"
+                    onMouseOut="style.borderColor='black'">
+            <% end %>
+        <% end %>
+        <%= date.day %>
+        <% if date.month == asdf[0][7].month %>
+            <div id="todo<%= date.strftime("%Y%m%d") %>" class="todo">
+        <% else %>
+            <!-- 月の最初の方には、先月もしくは次月に同じ日を表す日付があるので、anotherと命名して区別する -->
+            <div id="another_todo<%= date.strftime("%Y%m%d") %>" class="todo">
+        <% end %>
+        <% if asdf[1][i] == '' %>
+            <nobr>　</nobr></div></td>
+        <% else %>
+            <nobr><%= asdf[1][i] %></nobr></div></td>
+        <% end %>
+        <% if  date.wday == 6 %>
+            </tr>
+        <% end %>
+        <% i = i + 1 %>
+    <% end %>
+    </tbody></table>
+<% end %>
+</div>

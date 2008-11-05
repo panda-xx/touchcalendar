@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html style="overflow: hidden">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>
+      <% if @page_title -%><%= h(@page_title) -%> -- <% end -%>Todo Maker
+    </title>
+    <%= stylesheet_link_tag 'base' %>
+    <%= stylesheet_link_tag 'calendar' %>
+    <%= stylesheet_link_tag 'in_place_styles' %>
+
+	<%= javascript_include_tag :defaults %>
+    <% if params[:controller] == 'calendar' %>
+        <script type="text/javascript" src="/javascripts/gcalendar.js"></script>
+    <% else %>
+        <script type="text/javascript" src="/javascripts/gcalendar_logined.js"></script>
+    <% end %>
+    <script type="text/javascript" src="/javascripts/scriptaculous.js"></script>
+</head>
+<body style="overflow: hidden">
+<% if request.mobile? || params[:controller] == "mobile" %>
+    <%= yield :layout%>
+<% else %>
+    <div id = "container">
+    <img id = "aorLogo" src="/images/aorbnr_fg.gif" style="right:0px;top:0px;position:absolute;z-index:201">
+        <div id = "header">
+		    <div id = "title">
+		        <%= render :partial => 'shared/title' %>
+		    </div>
+<!--
+			<div id = "menu_bar">
+				<% if params[:controller] != 'remote_access' %>
+				    <%= render :partial => 'shared/menu_bar' %>
+				<% end %>	
+			</div>
+-->
+		</div>
+		<% if params[:controller] == 'main' %>
+		<div id = "left">
+			<% if @side_bar_template_name %>
+				<%= render :partial => @side_bar_template_name %>
+			<% end %>
+		</div>
+		<% end %>        
+	    <div id = "right">
+	        <%= yield :layout%>
+	    </div>
+    </div>
+<% end %>
+</body>
+</html>

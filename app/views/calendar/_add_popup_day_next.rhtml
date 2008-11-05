@@ -1,0 +1,108 @@
+    <%= @addNextDay.year %>/<%= @addNextDay.strftime("%m") %>/<%= @addNextDay.strftime("%d") %><br>
+    <input id="text<%= @addNextDay.strftime("%Y%m%d") %>" style="text" width="300px" onkeydown="
+        if (event.keyCode == Event.KEY_RETURN){$('button<%= @addNextDay.strftime("%Y%m%d") %>').onclick();};"></input>
+    <input id="button<%= @addNextDay.strftime("%Y%m%d") %>" type="button" value="add Todo" onclick="
+        queryStr = $('text' + '<%= @addNextDay.strftime("%Y%m%d") %>').value;
+        if (queryStr == '' || this.value == 'adding...'){
+            return;
+        }
+        $('text' + '<%= @addNextDay.strftime("%Y%m%d") %>').value = '';
+        this.value = 'adding...';
+        queryStr = 'todo_text=' + queryStr;
+        new Ajax.Updater('tmp' + '<%= @addNextDay.strftime("%Y%m%d") %>',
+                         '/calendar/create/' + '<%= @addNextDay.strftime("%Y%m%d") %>' + '?' +encodeURI(queryStr),
+                          {asynchronous:true,
+                           evalScripts:true, 
+                           parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        new Ajax.Updater('todo<%= @addNextDay.strftime("%Y%m%d") %>',
+                         '/calendar/reload_todo/<%= @addNextDay.strftime("%Y%m%d") %>',
+                          {asynchronous : true,
+                           evalScripts  : true, 
+                           parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        if ($('another_todo<%= @addNextDay.strftime("%Y%m%d") %>')){
+            new Ajax.Updater('another_todo<%= @addNextDay.strftime("%Y%m%d") %>',
+                             '/calendar/reload_todo/<%= @addNextDay.strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        }">
+    </input><br>
+    <table id="table<%= @addNextDay.strftime("%Y%m%d") %>" style="width:100%;"><tbody>
+    <% j = 0 %>
+    <% @addNextTodo.each do |todo| %>
+	    <% if j % 2 == 0 %>
+	    <tr style='background-color:#E5ECF9;'>
+        <% else %>
+	    <tr style=''>
+        <% end %>
+        <td><%= todo.text %></td>
+	    <td width='15px' style='text-align:center;cursor:pointer;' onclick="
+            new Ajax.Updater('tmp<%= @addNextDay.strftime("%Y%m%d") %>',
+                             '/calendar/delete/<%= todo.id %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             ); 
+            this.parentNode.parentNode.removeChild(this.parentNode);
+            arrangeRowColor('table<%= @addNextDay.strftime("%Y%m%d") %>');
+            var divHeight = parseFloat(Element.getStyle($('<%= @addNextDay.strftime("%Y%m%d") %>'), 'height'));
+            if ( divHeight >  popupHeight ){ 
+                popupDayHeights[currentDayNum] = divHeight;
+                Element.setStyle($('dayDisplay'), {'height' : divHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(divHeight);
+            } else {
+                popupDayHeightsWriter(popupHeight);
+                Element.setStyle($('dayDisplay'), {'height' : popupHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(popupHeight);
+            }
+            new Ajax.Updater('todo<%= @addNextDay.strftime("%Y%m%d") %>',
+                             '/calendar/reload_todo/<%= @addNextDay.strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+            if ($('another_todo<%= @addNextDay.strftime("%Y%m%d") %>')){
+                new Ajax.Updater('another_todo<%= @addNextDay.strftime("%Y%m%d") %>',
+                                 '/calendar/reload_todo/<%= @addNextDay.strftime("%Y%m%d") %>',
+                                  {asynchronous : true,
+                                   evalScripts  : true, 
+                                   parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                                  }
+                                 );
+            }">
+        x</td></tr>
+        <% j = j + 1 %>
+    <% end %>
+    </tbody></table>
+    <div id='tmp<%= @addNextDay.strftime("%Y%m%d") %>'></div>
+<script type="text/javascript" >
+function addPopupDayNext(){ 
+    var nextDayHeight = parseFloat(Element.getStyle($('<%= @addNextDay.strftime("%Y%m%d") %>'), "height"));
+    if ( nextDayHeight <  popupHeight ){ 
+        nextDayHeight = popupHeight;
+    }
+
+    // $('popDays').childNodes　には、divだけじゃなくてtextも入っているのでちょっとややこしい
+    var j = 0;
+    for (var i = 0; i < $('popDays').childNodes.length ; i++){
+        if ( $('popDays').childNodes[i].id ){
+            if ( '<%= @addNextDay.strftime("%Y%m%d") %>' == $('popDays').childNodes[i].id ){
+                popupDayHeights[j] = nextDayHeight;
+            }
+            j++;
+        }
+    }
+}
+addPopupDayNext();
+</script>
+

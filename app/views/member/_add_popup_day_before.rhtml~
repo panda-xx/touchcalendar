@@ -1,0 +1,108 @@
+    <%= @addBeforeDay.year %>/<%= @addBeforeDay.strftime("%m") %>/<%= @addBeforeDay.strftime("%d") %><br>
+    <input id="text<%= @addBeforeDay.strftime("%Y%m%d") %>" style="text" width="300px" onkeydown="
+        if (event.keyCode == Event.KEY_RETURN){$('button<%= @addBeforeDay.strftime("%Y%m%d") %>').onclick();};"></input>
+    <input id="button<%= @addBeforeDay.strftime("%Y%m%d") %>" type="button" value="add Todo" onclick="
+        queryStr = $('text' + '<%= @addBeforeDay.strftime("%Y%m%d") %>').value;
+        if (queryStr == '' || this.value == 'adding...'){
+            return;
+        }
+        $('text' + '<%= @addBeforeDay.strftime("%Y%m%d") %>').value = '';
+        this.value = 'adding...';
+        queryStr = '?todo_text=' + queryStr;
+        new Ajax.Updater('tmp' + '<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                         '/member/create/' + '<%= @addBeforeDay.strftime("%Y%m%d") %>' + queryStr,
+                          {asynchronous:true,
+                           evalScripts:true, 
+                           parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        new Ajax.Updater('todo<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                         '/member/reload_todo/<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                          {asynchronous : true,
+                           evalScripts  : true, 
+                           parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+        if ($('another_todo<%= @addBeforeDay.strftime("%Y%m%d") %>')){
+            new Ajax.Updater('another_todo<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                             '/member/reload_todo/<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        }">
+    </input><br>
+    <table id="table<%= @addBeforeDay.strftime("%Y%m%d") %>" style="width:100%;"><tbody>
+    <% j = 0 %>
+    <% @addBeforeTodo.each do |todo| %>
+	    <% if j % 2 == 0 %>
+	    <tr style='background-color:#E5ECF9;'>
+        <% else %>
+	    <tr style=''>
+        <% end %>
+        <td><%= todo.text %></td>
+	    <td width='15px' style='text-align:center;cursor:pointer;' onclick="
+            new Ajax.Updater('tmp<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                             '/member/delete/<%= todo.id %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             ); 
+            this.parentNode.parentNode.removeChild(this.parentNode);
+            arrangeRowColor('table<%= @addBeforeDay.strftime("%Y%m%d") %>');
+            var divHeight = parseFloat(Element.getStyle($('<%= @addBeforeDay.strftime("%Y%m%d") %>'), 'height'));
+            if ( divHeight >  popupHeight ){ 
+                popupDayHeights[currentDayNum] = divHeight;
+                Element.setStyle($('dayDisplay'), {'height' : divHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(divHeight);
+            } else {
+                popupDayHeightsWriter(popupHeight);
+                Element.setStyle($('dayDisplay'), {'height' : popupHeight + 'px'});
+                // 吹き出しの高さ調整
+                baloonHeightArranger(popupHeight);
+            }
+            new Ajax.Updater('todo<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                             '/member/reload_todo/<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        if ($('another_todo<%= @addBeforeDay.strftime("%Y%m%d") %>')){
+            new Ajax.Updater('another_todo<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                             '/member/reload_todo/<%= @addBeforeDay.strftime("%Y%m%d") %>',
+                              {asynchronous : true,
+                               evalScripts  : true, 
+                               parameters   : 'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        }">
+        X</td></tr>
+        <% j = j + 1 %>
+    <% end %>
+    </tbody></table>
+    <div id='tmp<%= @addBeforeDay.strftime("%Y%m%d") %>'></div>
+<script type="text/javascript" >
+function addPopupDayBefore(){ 
+    $('debug02').innerHTML = "";
+    var beforeDayHeight = parseFloat(Element.getStyle($('<%= @addBeforeDay.strftime("%Y%m%d") %>'), "height"));
+    if ( beforeDayHeight <  popupHeight ){ 
+        beforeDayHeight = popupHeight;
+    }
+    // $('popDays').childNodes　には、divだけじゃなくてtextも入っているのでちょっとややこしい
+    var j = 0;
+    for (var i = 0; i < $('popDays').childNodes.length ; i++){
+        if ( $('popDays').childNodes[i].id ){
+            if ( '<%= @addBeforeDay.strftime("%Y%m%d") %>' == $('popDays').childNodes[i].id ){
+                popupDayHeights[i] = beforeDayHeight;
+            }
+            j++;
+        }
+    }
+}
+addPopupDayBefore();
+</script>
+

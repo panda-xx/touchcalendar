@@ -1,0 +1,50 @@
+<div class="green">
+ <div id="slatenav">
+  <ul>
+	
+	<% if @current_user -%>
+		<% if params[:action] == 'top' %>
+			<li><a href=<%= url_for :action => 'top' %>  class="current">TODO</a></li>
+			<li><a href=<%= url_for :action => 'memo' %> class="general" title="MEMO">MEMO</a></li>
+			<li><a href=<%= url_for :action => 'calendar' %> class="general" title="CALENDAR">CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'weekly_calendar' %> class="general" title="WEEKLY_CALENDAR">WEEKLY CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'g_calendar' %>  class="general" title="G-CALENDAR">G CALENDAR</a></li>
+		<% elsif params[:action] == 'memo' %>
+			<li><a href=<%= url_for :action => 'top' %>  class="general" title="TODO">TODO</a></li>
+			<li><a href=<%= url_for :action => 'memo' %> class="current">MEMO</a></li>
+			<li><a href=<%= url_for :action => 'calendar' %> class="general" title="CALENDAR">CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'weekly_calendar' %> class="general" title="WEEKLY_CALENDAR">WEEKLY CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'g_calendar' %>  class="general" title="G-CALENDAR">G CALENDAR</a></li>
+		<% elsif params[:action] == 'calendar' %>
+			<li><a href=<%= url_for :action => 'top' %>  class="general" title="TODO">TODO</a></li>
+			<li><a href=<%= url_for :action => 'memo' %> class="general" title="MEMO">MEMO</a></li>
+			<li><a href=<%= url_for :action => 'calendar' %> class="current">CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'weekly_calendar' %> class="general" title="WEEKLY_CALENDAR">WEEKLY CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'g_calendar' %>  class="general" title="G-CALENDAR">G CALENDAR</a></li>
+		<% elsif params[:action] == 'weekly_calendar' %>
+			<li><a href=<%= url_for :action => 'top' %>  class="general" title="TODO">TODO</a></li>
+			<li><a href=<%= url_for :action => 'memo' %> class="general" title="MEMO">MEMO</a></li>
+			<li><a href=<%= url_for :action => 'calendar' %> class="general" title="CALENDAR">CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'weekly_calendar' %> class="current">WEEKLY CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'g_calendar' %>  class="general" title="G-CALENDAR">G CALENDAR</a></li>
+		<% elsif params[:action] == 'g_calendar' %>
+			<li><a href=<%= url_for :action => 'top' %>  class="general" title="TODO">TODO</a></li>
+			<li><a href=<%= url_for :action => 'memo' %> class="general" title="MEMO">MEMO</a></li>
+			<li><a href=<%= url_for :action => 'calendar' %> class="general" title="CALENDAR">CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'weekly_calendar' %> class="general" title="WEEKLY_CALENDAR">WEEKLY CALENDAR</a></li>
+			<li><a href=<%= url_for :action => 'g_calendar' %> class="current">G CALENDAR</a></li>
+		<% end %>
+
+		<li class="logout">
+			<%= link_to 'Logout',
+				{ :controller => '/login', :action => 'logout' },
+				{ :method => 'post',
+				  :confirm => 'Do you really logout now?'} -%>
+	   </li>
+		<li class="account"><%= @current_user.login_name + "さんのアカウント" %></li>
+	<% end -%>
+  </ul>
+ </div>
+</div>
+
+

@@ -1,0 +1,35 @@
+<%= in_place_text_field( :todo, :text  , { :save_text=>"Save", :cancel_text=>"Cancel" }) %>
+<script type="text/javascript" >
+    
+    var tmpStr = "";
+    tmpStr = $('tmp<%= @todo.limit_datetime.strftime("%Y%m%d") %>').innerHTML;
+    var rowSum = $('table<%= @todo.limit_datetime.strftime("%Y%m%d") %>').getElementsByTagName('tr').length;
+    var rowElement = $('table<%= @todo.limit_datetime.strftime("%Y%m%d") %>').insertRow(rowSum);
+    if (rowSum % 2 == 0){
+        Element.setStyle(rowElement, {'backgroundColor':'#E5ECF9'});
+    }
+    var cell1 = rowElement.insertCell(0);
+    cell1.innerHTML = tmpStr;
+    var cell2 = rowElement.insertCell(1);
+    cell2.innerHTML = "<div style='position:relative; cursor:pointer; text-align:center;' onclick=\"new Ajax.Updater('tmp<%= @todo.limit_datetime.strftime("%Y%m%d") %>',                     '/calendar/delete/' + '<%= @todo.id %>',                      {asynchronous : true,                       evalScripts  : true,                        parameters   : 'authenticity_token=' + encodeURIComponent(authToken)                      }                     );     this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);              arrangeRowColor('table<%= @todo.limit_datetime.strftime("%Y%m%d") %>'); var divHeight = parseFloat(Element.getStyle($('<%= @todo.limit_datetime.strftime("%Y%m%d") %>'), 'height'));if ( divHeight >  popupHeight ){         popupDayHeights[currentDayNum] = divHeight;        Element.setStyle($('dayDisplay'), {'height' : divHeight + 'px'});  baloonHeightArranger(divHeight);    } else {        popupDayHeightsWriter(popupHeight);        Element.setStyle($('dayDisplay'), {'height' : popupHeight + 'px'});  baloonHeightArranger(popupHeight);  }    var divHeight = parseFloat(Element.getStyle($('<%= @todo.limit_datetime.strftime("%Y%m%d") %>'), 'height'));    if ( divHeight >  popupHeight ){        popupDayHeights[currentDayNum] = divHeight;        Element.setStyle($('dayDisplay'),            {'height' : divHeight + 'px'});    } else {        popupDayHeightsWriter(popupHeight);        Element.setStyle($('dayDisplay'),            {'height' : popupHeight + 'px'});}    new Ajax.Updater('todo<%= @todo.limit_datetime.strftime("%Y%m%d") %>', '/calendar/reload_todo/<%= @todo.limit_datetime.strftime("%Y%m%d") %>', {asynchronous : true,    evalScripts  : true,  parameters   : 'authenticity_token=' + encodeURIComponent(authToken) }   );   if ($('another_todo<%= @todo.limit_datetime.strftime("%Y%m%d") %>')){  new Ajax.Updater('another_todo<%= @todo.limit_datetime.strftime("%Y%m%d") %>', '/calendar/reload_todo/<%= @todo.limit_datetime.strftime("%Y%m%d") %>', {asynchronous : true,    evalScripts  : true,  parameters   : 'authenticity_token=' + encodeURIComponent(authToken) }   ); }\">x</div>";
+
+    Element.setStyle(cell2, {"width" : "15px"});
+    Element.setStyle(rowElement, {'height':'20px'});    
+    $('tmp<%= @todo.limit_datetime.strftime("%Y%m%d") %>').innerHTML = '';
+    var divHeight = parseFloat(Element.getStyle($('<%= @todo.limit_datetime.strftime("%Y%m%d") %>'), 'height'));
+    if ( divHeight >  popupHeight ){ 
+        popupDayHeights[currentDayNum] = divHeight;
+        Element.setStyle($('dayDisplay'), {"height" : divHeight + "px"});
+        // 吹き出しの高さ調整
+        baloonHeightArranger(divHeight);
+    } else {
+        popupDayHeightsWriter(popupHeight);
+        Element.setStyle($('dayDisplay'), {"height" : popupHeight + "px"});
+        // 吹き出しの高さ調整
+        baloonHeightArranger(popupHeight);
+    }
+    // ボタンのテキストを元に戻す
+    $('button<%= @todo.limit_datetime.strftime("%Y%m%d") %>').value = 'add Todo';
+
+</script>
+

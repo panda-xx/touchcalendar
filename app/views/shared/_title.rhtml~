@@ -1,0 +1,30 @@
+<table id="titleTable" style="width:100%;height:20px">
+<tbody><tr>
+<td id="titleTd1" style="cursor:pointer; width:200px;"
+    onClick="window.open('<%= url_for ( :controller => 'calendar', :action => 'g_calendar') %>','_self');">
+Touch! Calendar</td><td></td>
+<td id="accountName" style="width:100px;text-align:center;">
+<% if @current_user && params[:controller] == 'member' %>
+<%= @current_user.login_name %>'s account
+<% end %>
+</td>
+<td id="login_logout" style="width:100px;text-align:center;">
+<% if params[:controller] == 'member' %>
+    <%= link_to 'Log out',
+		{ :controller => '/login', :action => 'logout' },
+		{ :method => 'post',
+		  :confirm => 'Do you really logout now?'} -%>
+<% elsif params[:controller] == 'calendar' %>
+    <%= link_to 'Log in',
+	    { :controller => '/main', :action => 'top' },
+	    { :method => 'post'} -%>
+<% end %>
+</td>
+<td id="titleTd2" style="width:100px;cursor:pointer;text-align:center" onclick="appearHelpBaloon();">
+<% if params[:controller] != 'main' %>
+    How to use
+<% end %>
+</td><td id="titleTd3" style="width:90px"></td>
+</tr>
+</tbody>
+</table>

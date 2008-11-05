@@ -1,0 +1,16 @@
+<script type="text/javascript" >
+            var divHeight = parseFloat(Element.getStyle($('<%= @deletedTodoTime.strftime("%Y%m%d") %>'), 'height'));
+            if ( divHeight >  popupHeight ){
+                var dayDisplayHeight = parseFloat(Element.getStyle($('dayDisplay'), "top"));
+                popupDayHeights[currentDayNum] = divHeight;
+                // 吹き出しの高さ調整
+                baloonHeightArranger(divHeight);
+                Element.setStyle($('dayDisplay'), {"height" : divHeight + "px"});
+            } else {
+                var dayDisplayHeight = parseFloat(Element.getStyle($('dayDisplay'), "top"));
+                popupDayHeightsWriter(popupHeight);
+                // 吹き出しの高さ調整
+                baloonHeightArranger(popupHeight);
+                Element.setStyle($('dayDisplay'), {"height" : popupHeight + "px"});
+            }
+</script>

@@ -1,0 +1,68 @@
+<% @side_bar_template_name = "member/todo_bar" %>
+<% @page_title = "ToDo List" %>
+
+<table frame = 'border' rules = 'all'>
+	<thead style = "background:#8FCCAE;">
+		<tr width = "550">
+			<th width = "310">Todo</th>
+			<th width = "50">
+			Limit
+			</th>
+			<th width = "150">
+				<! ------プルダウンを表示----- >
+				<select onchange="location.href = this.options[selectedIndex].value" >
+					<option value="">All-Kind</option>
+					<% i = 0 %>
+					<% @kind_text_array.each do |kind| %>
+						<% @url_path = url_for(:controller => 'member', :action =>'top', :id =>kind)   %>
+						<option value= <%= @url_path %> ><%= kind %></option>
+						<% i = i + 1 %>
+					<% end %>
+				</select>
+			</th>
+			<th width = "40"></th>
+		</tr>
+	</thead>
+	<tbody>
+  <% for @todo in @todo_list -%>
+	<% if @todo.limit != nil %>
+		<tr width = "500">
+			<td width = "250">
+				<%= in_place_text_field( :todo, :text  , { :save_text=>"保存", :cancel_text=>"取消" }) %></td>
+			</td>
+			<td width = "80">
+			<% if @todo.limit != nil %>
+				<% if   @todo.limit_datetime.year  == Time.now.year and
+						@todo.limit_datetime.month == Time.now.month and
+						@todo.limit_datetime.day   == Time.now.day
+				%>
+					<%= "Today" %><br>
+					<%= @todo.limit_datetime.strftime("%p %I") %>
+				<% elsif
+						@todo.limit_datetime.year  == (Time.now + 86400).year and
+						@todo.limit_datetime.month == (Time.now + 86400).month and
+						@todo.limit_datetime.day   == (Time.now + 86400).day
+				%>
+					<%= "Tomorrow" %><br>
+					<%= @todo.limit_datetime.strftime("%p %I") %>
+				<% elsif
+						@todo.limit_datetime.year  == (Time.now - 86400).year and
+						@todo.limit_datetime.month == (Time.now - 86400).month and
+						@todo.limit_datetime.day   == (Time.now - 86400).day
+				%>
+					<%= "Yesterday" %><br>
+					<%= @todo.limit_datetime.strftime("%p %I") %>
+				<% else %>
+					<%= @todo.limit %>
+				<% end %>
+			<% end %>
+			</td>
+		      <td width = "100"><%= @todo.kind %></td>
+		      <td width = "40"><%= link_to '削除', :action => 'delete', :id => @todo.id %></td>
+		  </tr>     
+	<% end %>
+  <% end %>
+	</tbody>
+</table>
+
+

@@ -1,0 +1,13 @@
+<h3>Enter new user</h3> 
+<div style="color:red"><%= flash[:notice] %></div>
+<div style="color:red"><%= flash[:warning] %></div>
+<% form_for :member, @member,
+   :url => { :controller => "main", :action => 'create'},
+   :html => { :class => ''} do |form|  %>
+<table><tbody>
+<tr><td>User name</td><td><%= form.text_field :login_name, :size => 16 %></td></tr>
+<tr><td>Password</td><td><%= form.password_field :password, :size => 12 %></td></tr>
+<tr><td>Confirm</td><td><%= form.password_field :password_confirmation, :size => 12 %></td></tr>
+<tr><td></td><td><%= submit_tag 'Registration' %></td></tr></table>
+<% end %>
+<%= link_to("Return to Login Top", :controller => "main", :action => "top") %>
