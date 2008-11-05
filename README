@@ -1,0 +1,8 @@
+Ruby on Railsで作ったので、とりあえずappとpublicを公開します。
+他はほとんどいじってないので、公開する意味もないかと。
+
+見どころは、app/views　下にあるrhtmlファイルと、
+public/javascripts 下にあるgcalendar.jsの2種類です。
+要するにJavascriptが見どころ。
+
+暇なら見てってください。
