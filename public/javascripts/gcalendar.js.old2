@@ -1,0 +1,1272 @@
+var MovingHandlers = Class.create({
+	// 移動中のX,Y座標
+	startposX :0,
+	startposY:0,
+	originalPositionX : [],
+	originalPositionY : [],
+	
+	// 前回のX,Y座標
+	pX :0,
+	pY:0,
+
+	//ドラッグ中かどうかのフラグ
+	isMoving : false,
+
+	//ドラッグ方向が水平方向かどうかを表すフラグ
+	isHorizon : false,
+
+	// ドラッグレイヤーの有無
+	isDragLayer : false,
+
+	//　ドラッグ中の要素
+	movingElement : null,
+
+	// ドラッグのターゲット
+	dragTarget : [],
+
+	// ドラッグのターゲットを退避させる配列
+	dragTargetStock : [],
+
+    // 次回Ajax.updaterが起動するしきい値
+    updateMinX : 0,
+    updateMaxX : 0,
+    updateMinY : 0,
+    updateMaxY : 0,
+    
+    // div#calendar要素のobject
+    calendarObject : null,
+    
+    // div#calendar要素のXY座標
+    calendarCurrentX : 0,
+    calendarCurrentY : 0,
+    
+    // div#calendar要素の移動先XY座標
+    calendarNextX : 0,
+    calendarNextY : 0,
+    
+	// 初期化関数
+	initialize : function()
+	{		
+		// マウスのイベントを設定する
+		document.observe('mousedown', this.onMousedown.bindAsEventListener(this));
+		document.observe('mousemove', this.onMousemove.bindAsEventListener(this));
+		document.observe('mouseup', this.onMouseup.bindAsEventListener(this));
+		this.isDragLayer = true;
+		// IEでは、divのウィンドウ外のドラッグがうまくいかないので、
+		// img要素をドラッグさせる
+		if(navigator.userAgent.indexOf("MSIE") != -1)
+		{
+		    var t = document.createElement('img');
+			t.id = 'dragLayer';
+			document.body.appendChild(t);
+		}else if(navigator.userAgent.indexOf("Opera") != -1){
+		} else {
+		    var t = document.createElement('div');
+			t.id = 'dragLayer';
+			document.body.appendChild(t);
+		}
+        updateMinX = - drawwingWidth;
+        updateMaxX = drawwingWidth;
+        updateMinY = - drawwingHeight;
+        updateMaxY = drawwingHeight;
+        calendarObject = $('calendar');
+	},
+
+	// 対象要素の追加(id)
+	add : function(targetID)
+	{
+		this.dragTarget.push(targetID);
+	},
+
+	//　対象要素の削除
+	remove : function(targetID)
+	{
+		this.dragTarget = this.dragTarget.without(targetID);
+	},
+	
+	// マウスのボタンがクリックされたとき
+	onMousedown : function(evt){
+	    if (!evt.isLeftClick()){
+	        return;
+	    }
+	    if ( evt.target.id == "dayDisplay" || evt.target.id == "popClose" || evt.target.className == 'inplace_text_field' || evt.target.className == 'inplace_span'|| evt.target.className == 'popDay'){
+            return;
+	    }
+	    if (this.isDragLayer){
+		    //クリックされた位置を保存
+		    // 動かす要素を取得
+		    for ( var i = 0; i < this.dragTarget.length; i++){
+    			var targetElement = $(this.dragTarget[i]);
+		        // ドキュメントの左上を（0,0)とした現在の位置を保存
+		        this.originalPositionX.push(parseFloat(Element.getStyle(targetElement, "left")));
+		        this.originalPositionY.push(parseFloat(Element.getStyle(targetElement, "top")));
+            }
+    		// 現在のマウス位置を保存
+		    this.startposX = evt.pointerX();
+		    this.startposY = evt.pointerY();
+
+		    // ドラッグ中であるというフラグを立てる
+		    this.isMoving = true;
+		        evt.stop();
+	    }
+	},
+
+	// マウス移動中
+	onMousemove : function(evt)
+	{
+		// ドラッグ中であるなら移動する
+		if (this.isMoving) {
+            calendarCurrentX = parseFloat(Element.getStyle(calendarObject, "left"));
+	        calendarNextX = calendarCurrentX + evt.pointerX() - this.startposX;
+            
+            //**************************************************************
+            //いきなりdrawwingWidthを越える移動量が発生したときの対策をしてない
+            //**************************************************************
+            if ( calendarNextX > updateMaxX){
+                addCalendarInLeft();
+                updateMinX = updateMinX + drawwingWidth;
+                updateMaxX = updateMaxX + drawwingWidth;
+            }
+            else if (calendarNextX < updateMinX){
+                addCalendarInRight();
+                updateMinX = updateMinX - drawwingWidth;
+                updateMaxX = updateMaxX - drawwingWidth;
+            }
+
+            calendarCurrentY = parseFloat(Element.getStyle(calendarObject, "top"));
+	        calendarNextY = calendarCurrentY + evt.pointerY() - this.startposY;
+            if ( calendarNextY > updateMaxY){
+                addCalendarInTop();
+                updateMinY = updateMinY + drawwingHeight;
+                updateMaxY = updateMaxY + drawwingHeight;
+            } else if (calendarNextY < updateMinY){
+                addCalendarInBottom();
+                updateMinY = updateMinY - drawwingHeight;
+                updateMaxY = updateMaxY - drawwingHeight;
+            }
+
+			// 移動するべき要素を取得
+			for ( var i = 0; i < this.dragTarget.length; i++){
+			    var targetElement = $(this.dragTarget[i]);
+		        // 	差分だけを動かす
+		        Element.setStyle(targetElement, 	{"left": this.originalPositionX[i] + evt.pointerX() - this.startposX + 'px'});
+		        Element.setStyle(targetElement, 	{"top" : this.originalPositionY[i] + evt.pointerY() - this.startposY + 'px'});
+//				document.getElementById(targetElement).top  = this.originalPositionY[i] + evt.pointerY() - this.startposY + 'px';
+//				document.getElementById(targetElement).left = this.originalPositionX[i] + evt.pointerX() - this.startposX + 'px';
+            }
+            evt.stop();
+		}
+	},
+
+	// マウスのボタンが離された
+	onMouseup : function(evt)
+	{
+		// ドラッグ完了
+		if ( this.isMoving && this.isDragLayer)
+		{
+			// 位置を確定する
+			// 動かすべき要素を取得
+			for ( var i = 0; i < this.dragTarget.length; i++){
+			    var targetElement = $(this.dragTarget[i]);
+		        // 	差分だけを動かす
+		        Element.setStyle(targetElement, 	{"left": this.originalPositionX[i] + evt.pointerX() - this.startposX + 'px'});
+		        Element.setStyle(targetElement, 	{"top" : this.originalPositionY[i] + evt.pointerY() - this.startposY + 'px'});
+		        evt.stop();
+            }
+			evt.stop();
+		}
+		this.isMoving = false;
+        if (evt.preventDefault) {
+                evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+                evt.stopPropagation();
+        }
+        this.originalPositionX = [];
+        this.originalPositionY = [];
+	}
+}
+);
+
+/************************************* 
+ドラッグした際に、つぎの表を読み込む処理 
+ *************************************/
+
+// 右に追加する場合について
+addCalendarInRight=function(){
+    // カレンダーの中心年月を取得し、次に中心となる年月を作成する
+    var yearMonth = parseInt(centralCalendarId).toString();
+    var year  = parseInt(yearMonth.substr(0,4));
+    var month = eval(yearMonth.substr(4,2));
+    if ( month == 12 ){
+        nextCentralCalendarId = "" + (year + 1) + "01";
+    } else if (month < 9){
+        nextCentralCalendarId = "" + year + "0" + (month + 1);
+    } else {
+        nextCentralCalendarId = "" + year + (month + 1);
+    }
+
+
+    
+    // すでにあるテーブル要素で不要なものを削除する
+    var oldMonths = new Array(3);
+
+    switch (month){
+        case 1:
+            oldMonths[0] = "" + (year - 2) + "12";
+            oldMonths[1] = "" + (year - 1) + "12";
+            oldMonths[2] = "" + (year    ) + "12";
+            break;
+        case 12:
+            oldMonths[0] = "" + (year - 1) + "11";
+            oldMonths[1] = "" + (year    ) + "11";
+            oldMonths[2] = "" + (year + 1) + "11";
+            break;
+        case 11:
+            oldMonths[0] = "" + (year - 1) + "10";
+            oldMonths[1] = "" + (year    ) + "10";
+            oldMonths[2] = "" + (year + 1) + "10";
+            break;
+        default:
+            oldMonths[0] = "" + (year - 1) + "0" + (month - 1);
+            oldMonths[1] = "" +  year      + "0" + (month - 1);
+            oldMonths[2] = "" + (year + 1) + "0" + (month - 1);
+    }
+
+    for (var i = 0; i < oldMonths.length; i++){
+        $(oldMonths[i]).parentNode.removeChild($(oldMonths[i]));
+//        mouseHandler.remove(oldMonths[i]);
+    }
+    
+    // 次のテーブル要素を作成し、追加する table#200810　など
+    var nextMonth = new Array(3);
+    switch (month){
+        case 11:
+            nextMonth[0] = "" + (year    ) + "01";
+            nextMonth[1] = "" + (year + 1) + "01";
+            nextMonth[2] = "" + (year + 2) + "01";
+            break;
+        case 12:
+            nextMonth[0] = "" + (year    ) + "02";
+            nextMonth[1] = "" + (year + 1) + "02";
+            nextMonth[2] = "" + (year + 2) + "02";
+            break;
+        case 8:
+            nextMonth[0] = "" + (year - 1) + "10";
+            nextMonth[1] = "" +  year      + "10";
+            nextMonth[2] = "" + (year + 1) + "10";
+            break;
+        case 9:
+            nextMonth[0] = "" + (year - 1) + "11";
+            nextMonth[1] = "" +  year      + "11";
+            nextMonth[2] = "" + (year + 1) + "11";
+            break;
+        case 10:
+            nextMonth[0] = "" + (year - 1) + "12";
+            nextMonth[1] = "" +  year      + "12";
+            nextMonth[2] = "" + (year + 1) + "12";
+            break;
+        default:
+            nextMonth[0] = "" + (year - 1) + "0" + (month + 2);
+            nextMonth[1] = "" +  year      + "0" + (month + 2);
+            nextMonth[2] = "" + (year + 1) + "0" + (month + 2);
+    }
+    
+  
+    for (var i = 0; i < nextMonth.length; i++){
+        var t = document.createElement('table');
+        t.id = nextMonth[i];
+        t.className = "month";
+
+        var topPosition = 0;
+        var leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left")) + drawwingWidth / 0.95 * 2;     
+        /* カレンダーの位置に応じて設定を行う */
+        switch (i) {
+            case 0 :
+                topPosition  = parseFloat(Element.getStyle($(centralCalendarId),"top"))  - drawwingHeight / 0.95;
+                break;
+            case 1 :
+                topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top"));
+                break;
+            case 2 :
+                topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top"))   + drawwingHeight / 0.95;
+                break;
+        }
+        Element.setStyle(t,
+                         {"top" : topPosition + "px",
+                          "left": leftPosition + "px",
+                          "width": drawwingWidth + "px"
+                          });
+        calendarObject.appendChild(t);
+        // ドラッグ対象に追加
+//        mouseHandler.add(nextMonth[i]);
+        
+	    if(navigator.userAgent.indexOf("Gecko") != -1)	{
+            // そのテーブル要素に入れるものを作成する
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendarFirefox/' + nextMonth[i],
+                              {asynchronous:true,
+                               evalScripts:true, 
+                               parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        } else {
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendar/' + nextMonth[i],
+                             {asynchronous:true,
+                              evalScripts:true,
+                              parameters:'authenticity_token=' + encodeURIComponent(authToken)}
+                            );
+        }
+    }    
+    
+    // 中心年月を更新する
+    centralCalendarId = nextCentralCalendarId;
+}
+
+// 左に追加する場合
+addCalendarInLeft=function(){
+    // カレンダーの中心年月を取得し、次に中心となる年月を作成する
+    var yearMonth = parseInt(centralCalendarId).toString();
+    var year  = parseInt(yearMonth.substr(0,4));
+    var month = eval(yearMonth.substr(4,2));
+    if ( month == 1 ){
+        nextCentralCalendarId = "" + (year - 1) + "12";
+    } else if (month < 11){
+        nextCentralCalendarId = "" + year + "0" + (month - 1);
+    } else {
+        nextCentralCalendarId = "" + year + (month - 1);
+    }
+
+    // すでにあるテーブル要素で不要なものを削除する
+    var oldMonths = new Array(3);
+
+    switch (month){
+        case 12:
+            oldMonths[0] = "" + (year    ) + "01";
+            oldMonths[1] = "" + (year + 1) + "01";
+            oldMonths[2] = "" + (year + 2) + "01";
+            break;
+        case 9:
+            oldMonths[0] = "" + (year - 1) + "10";
+            oldMonths[1] = "" + (year    ) + "10";
+            oldMonths[2] = "" + (year + 1) + "10";
+            break;
+        case 10:
+            oldMonths[0] = "" + (year - 1) + "11";
+            oldMonths[1] = "" + (year    ) + "11";
+            oldMonths[2] = "" + (year + 1) + "11";
+            break;
+        case 11:
+            oldMonths[0] = "" + (year - 1) + "12";
+            oldMonths[1] = "" + (year    ) + "12";
+            oldMonths[2] = "" + (year + 1) + "12";
+            break;
+        default:
+            oldMonths[0] = "" + (year - 1) + "0" + (month + 1);
+            oldMonths[1] = "" +  year      + "0" + (month + 1);
+            oldMonths[2] = "" + (year + 1) + "0" + (month + 1);
+    }
+
+    for (var i = 0; i < oldMonths.length; i++){
+        $(oldMonths[i]).parentNode.removeChild($(oldMonths[i]));
+//        mouseHandler.remove(oldMonths[i]);
+    }
+
+    // 次のテーブル要素を作成し、追加する table#200810　など
+    var nextMonth = new Array(3);
+    switch (month){
+        case 2:
+            nextMonth[0] = "" + (year - 2) + "12";
+            nextMonth[1] = "" + (year - 1) + "12";
+            nextMonth[2] = "" + (year    ) + "12";
+            break;
+        case 1:
+            nextMonth[0] = "" + (year - 2) + "11";
+            nextMonth[1] = "" + (year - 1) + "11";
+            nextMonth[2] = "" + (year    ) + "11";
+            break;
+        case 12:
+            nextMonth[0] = "" + (year - 1) + "10";
+            nextMonth[1] = "" + (year    ) + "10";
+            nextMonth[2] = "" + (year + 1) + "10";
+            break;
+        default:
+            nextMonth[0] = "" + (year - 1) + "0" + (month - 2);
+            nextMonth[1] = "" +  year      + "0" + (month - 2);
+            nextMonth[2] = "" + (year + 1) + "0" + (month - 2);
+    }
+    
+    for (var i = 0; i < nextMonth.length; i++){
+        var t = document.createElement('table');
+        t.id = nextMonth[i];
+        t.className = "month";
+
+        var topPosition = 0;
+        var leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left")) - drawwingWidth / 0.95 * 2;
+        /* カレンダーの位置に応じて設定を行う */
+        switch (i) {
+            case 0 :
+                topPosition  = parseFloat(Element.getStyle($(centralCalendarId),"top"))  - drawwingHeight / 0.95;
+                break;
+            case 1 :
+                topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top"));
+                break;
+            case 2 :
+                topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top"))   + drawwingHeight / 0.95;
+                break;
+        }
+        Element.setStyle(t,
+                         {"top" : topPosition + "px",
+                          "left": leftPosition + "px",
+                          "width": drawwingWidth + "px"
+                          });
+        calendarObject.appendChild(t);
+        
+	    if(navigator.userAgent.indexOf("Gecko") != -1)	{
+            // そのテーブル要素に入れるものを作成する
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendarFirefox/' + nextMonth[i],
+                              {asynchronous:true,
+                               evalScripts:true, 
+                               parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        } else {
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendar/' + nextMonth[i],
+                             {asynchronous:true,
+                              evalScripts:true,
+                              parameters:'authenticity_token=' + encodeURIComponent(authToken)}
+                            );
+        }
+        // ドラッグ対象に追加
+//        mouseHandler.add(nextMonth[i]);
+    }    
+    
+    // 中心年月を更新する
+    centralCalendarId = nextCentralCalendarId;
+}
+
+// 上に追加する場合
+addCalendarInTop=function(){
+    // カレンダーの中心年月を取得し、次に中心となる年月を作成する
+    var yearMonth = parseInt(centralCalendarId).toString();
+    var year  = parseInt(yearMonth.substr(0,4));
+    var month = eval(yearMonth.substr(4,2));
+    if (month < 10){
+        nextCentralCalendarId = "" + (year - 1) + "0" + month;
+    } else {
+        nextCentralCalendarId = "" + (year - 1) + month;
+    }
+    
+    // すでにあるテーブル要素で不要なものを削除する
+    var oldMonths = new Array(3);
+    switch (month){
+        case 12:
+            oldMonths[0] = "" + (year + 1) + "11";
+            oldMonths[1] = "" + (year + 1) + "12";
+            oldMonths[2] = "" + (year + 2) + "01";
+            break;
+        case 1:
+            oldMonths[0] = "" + (year    ) + "12";
+            oldMonths[1] = "" + (year + 1) + "01";
+            oldMonths[2] = "" + (year + 1) + "02";
+            break;
+        case 10:
+            oldMonths[0] = "" + (year + 1) + "09";
+            oldMonths[1] = "" + (year + 1) + "10";
+            oldMonths[2] = "" + (year + 1) + "11";
+            break;
+        case 11:
+            oldMonths[0] = "" + (year + 1) + "10";
+            oldMonths[1] = "" + (year + 1) + "11";
+            oldMonths[2] = "" + (year + 1) + "12";
+            break;
+        case 9:
+            oldMonths[0] = "" + (year + 1) + "08";
+            oldMonths[1] = "" + (year + 1) + "09";
+            oldMonths[2] = "" + (year + 1) + "10";
+            break;
+        default:
+            oldMonths[0] = "" + (year + 1) + "0" + (month - 1);
+            oldMonths[1] = "" + (year + 1) + "0" + month;
+            oldMonths[2] = "" + (year + 1) + "0" + (month + 1);
+    }
+    
+    for (var i = 0; i < oldMonths.length; i++){
+        $(oldMonths[i]).parentNode.removeChild($(oldMonths[i]));
+//        mouseHandler.remove(oldMonths[i]);
+    }
+    
+    // 次のテーブル要素を作成し、追加する table#200810　など
+    var nextMonth = new Array(3);
+    switch (month){
+        case 12:
+            nextMonth[0] = "" + (year - 2) + "11";
+            nextMonth[1] = "" + (year - 2) + "12";
+            nextMonth[2] = "" + (year - 1) + "01";
+            break;
+        case 1:
+            nextMonth[0] = "" + (year - 3) + "12";
+            nextMonth[1] = "" + (year - 2) + "01";
+            nextMonth[2] = "" + (year - 2) + "02";
+            break;
+        case 10:
+            nextMonth[0] = "" + (year - 2) + "09";
+            nextMonth[1] = "" + (year - 2) + "10";
+            nextMonth[2] = "" + (year - 2) + "11";
+            break;
+        case 11:
+            nextMonth[0] = "" + (year - 2) + "10";
+            nextMonth[1] = "" + (year - 2) + "11";
+            nextMonth[2] = "" + (year - 2) + "12";
+            break;
+        case 9:
+            nextMonth[0] = "" + (year - 2) + "08";
+            nextMonth[1] = "" + (year - 2) + "09";
+            nextMonth[2] = "" + (year - 2) + "10";
+            break;
+        default:
+            nextMonth[0] = "" + (year - 2) + "0" + (month - 1);
+            nextMonth[1] = "" + (year - 2) + "0" + month;
+            nextMonth[2] = "" + (year - 2) + "0" + (month + 1);
+    }
+    
+    for (var i = 0; i < nextMonth.length; i++){
+        var t = document.createElement('table');
+        t.id = nextMonth[i];
+        t.className = "month";
+
+        var topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top")) - drawwingHeight / 0.95 * 2;
+        var leftPosition = 0;
+        /* カレンダーの位置に応じて設定を行う */
+        switch (i) {
+            // 左上
+            case 0 :
+                leftPosition  = parseFloat(Element.getStyle($(centralCalendarId),"left"))  - drawwingWidth / 0.95;
+                break;
+            case 1 :
+                leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left"));
+                break;
+            case 2 :
+                leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left"))   + drawwingWidth / 0.95;
+                break;
+        }
+
+
+        Element.setStyle(t,
+                         {"top" : topPosition + "px",
+                          "left": leftPosition + "px",
+                          "width": drawwingWidth + "px"
+                          });
+        calendarObject.appendChild(t);
+        
+	    if(navigator.userAgent.indexOf("Gecko") != -1)	{
+            // そのテーブル要素に入れるものを作成する
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendarFirefox/' + nextMonth[i],
+                              {asynchronous:true,
+                               evalScripts:true, 
+                               parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        } else {
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendar/' + nextMonth[i],
+                             {asynchronous:true,
+                              evalScripts:true,
+                              parameters:'authenticity_token=' + encodeURIComponent(authToken)}
+                            );
+        }
+        // ドラッグ対象に追加
+//        mouseHandler.add(nextMonth[i]);
+    }    
+    
+    // 中心年月を更新する
+    centralCalendarId = nextCentralCalendarId;
+}
+
+// 下に追加する場合
+addCalendarInBottom=function(){
+    // カレンダーの中心年月を取得し、次に中心となる年月を作成する
+    var yearMonth = parseInt(centralCalendarId).toString();
+    var year  = parseInt(yearMonth.substr(0,4));
+    var month = eval(yearMonth.substr(4,2));
+    if (month < 10){
+        nextCentralCalendarId = "" + (year + 1) + "0" + month;
+    } else {
+        nextCentralCalendarId = "" + (year + 1) + month;
+    }
+    // すでにあるテーブル要素で不要なものを削除する
+    var oldMonths = new Array(3);
+    switch (month){
+        case 12:
+            oldMonths[0] = "" + (year - 1) + "11";
+            oldMonths[1] = "" + (year - 1) + "12";
+            oldMonths[2] = "" + (year    ) + "01";
+            break;
+        case 1:
+            oldMonths[0] = "" + (year - 2) + "12";
+            oldMonths[1] = "" + (year - 1) + "01";
+            oldMonths[2] = "" + (year - 1) + "02";
+            break;
+        case 10:
+            oldMonths[0] = "" + (year - 1) + "09";
+            oldMonths[1] = "" + (year - 1) + "10";
+            oldMonths[2] = "" + (year - 1) + "11";
+            break;
+        case 11:
+            oldMonths[0] = "" + (year - 1) + "10";
+            oldMonths[1] = "" + (year - 1) + "11";
+            oldMonths[2] = "" + (year - 1) + "12";
+            break;
+        case 9:
+            oldMonths[0] = "" + (year - 1) + "08";
+            oldMonths[1] = "" + (year - 1) + "09";
+            oldMonths[2] = "" + (year - 1) + "10";
+            break;
+        default:
+            oldMonths[0] = "" + (year - 1) + "0" + (month - 1);
+            oldMonths[1] = "" + (year - 1) + "0" + month;
+            oldMonths[2] = "" + (year - 1) + "0" + (month + 1);
+    }
+    
+    for (var i = 0; i < oldMonths.length; i++){
+        $(oldMonths[i]).parentNode.removeChild($(oldMonths[i]));
+//        mouseHandler.remove(oldMonths[i]);
+    }
+    
+    // 次のテーブル要素を作成し、追加する table#200810　など
+    var nextMonth = new Array(3);
+    switch (month){
+        case 12:
+            nextMonth[0] = "" + (year + 2) + "11";
+            nextMonth[1] = "" + (year + 2) + "12";
+            nextMonth[2] = "" + (year + 3) + "01";
+            break;
+        case 1:
+            nextMonth[0] = "" + (year + 1) + "12";
+            nextMonth[1] = "" + (year + 2) + "01";
+            nextMonth[2] = "" + (year + 2) + "02";
+            break;
+        case 10:
+            nextMonth[0] = "" + (year + 2) + "09";
+            nextMonth[1] = "" + (year + 2) + "10";
+            nextMonth[2] = "" + (year + 2) + "11";
+            break;
+        case 11:
+            nextMonth[0] = "" + (year + 2) + "10";
+            nextMonth[1] = "" + (year + 2) + "11";
+            nextMonth[2] = "" + (year + 2) + "12";
+            break;
+        case 9:
+            nextMonth[0] = "" + (year + 2) + "08";
+            nextMonth[1] = "" + (year + 2) + "09";
+            nextMonth[2] = "" + (year + 2) + "10";
+            break;
+        default:
+            nextMonth[0] = "" + (year + 2) + "0" + (month - 1);
+            nextMonth[1] = "" + (year + 2) + "0" + month;
+            nextMonth[2] = "" + (year + 2) + "0" + (month + 1);
+    }
+    
+    for (var i = 0; i < nextMonth.length; i++){
+        var t = document.createElement('table');
+        t.id = nextMonth[i];
+        t.className = "month";
+
+        var topPosition = parseFloat(Element.getStyle($(centralCalendarId),"top")) + drawwingHeight / 0.95 * 2;
+        var leftPosition = 0;
+        /* カレンダーの位置に応じて設定を行う */
+        switch (i) {
+            case 0 :
+                leftPosition  = parseFloat(Element.getStyle($(centralCalendarId),"left"))  - drawwingWidth / 0.95;
+                break;
+            case 1 :
+                leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left"));
+                break;
+            case 2 :
+                leftPosition = parseFloat(Element.getStyle($(centralCalendarId),"left"))   + drawwingWidth / 0.95;
+                break;
+        }
+        Element.setStyle(t,
+                         {"top" : topPosition + "px",
+                          "left": leftPosition + "px",
+                          "width": drawwingWidth + "px"
+                          });
+        calendarObject.appendChild(t);
+        
+	    if(navigator.userAgent.indexOf("Gecko") != -1)	{
+            // そのテーブル要素に入れるものを作成する
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendarFirefox/' + nextMonth[i],
+                              {asynchronous:true,
+                               evalScripts:true, 
+                               parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                              }
+                             );
+        } else {
+            new Ajax.Updater(nextMonth[i], '/calendar/addNewCalendar/' + nextMonth[i],
+                             {asynchronous:true,
+                              evalScripts:true,
+                              parameters:'authenticity_token=' + encodeURIComponent(authToken)}
+                            );
+        }
+        // ドラッグ対象に追加
+//        mouseHandler.add(nextMonth[i]);
+    }    
+    
+    // 中心年月を更新する
+    centralCalendarId = nextCentralCalendarId;
+}
+
+
+/*************************************************
+ * 月間カレンダーの td div img の高さと幅を調整する *
+ *************************************************/
+function calendarSizeArranger(objStr){
+	var rowHeight = (drawwingHeight - 80) / 6;
+	var rowWidth = (drawwingWidth - 35) / 7;
+	if(navigator.userAgent.indexOf("Gecko") != -1)	{
+    	all = $(objStr).getElementsByTagName('td');
+        for (var i = 0; i < all.length; i++) {
+		    if (0 <= (' ' + all[i].className + ' ').indexOf(' todo ')) {
+			    Element.setStyle(all[i],  {"height": rowHeight + "px", "width": rowWidth + "px"});
+            }
+        }
+        
+    	all = $(objStr).getElementsByTagName('div');
+        for (var i = 0; i < all.length; i++) {
+		    if (0 <= (' ' + all[i].className + ' ').indexOf(' todo ')) {
+			    Element.setStyle(all[i],  {"height": rowHeight + "px", "width": rowWidth + "px"});
+            }
+        }
+
+        all = $(objStr).getElementsByTagName('img');
+        for (var i = 0; i < all.length; i++) {
+            if (0 <= (' ' + all[i].className + ' ').indexOf(' todo ')) {
+                Element.setStyle(all[i],  {"height": "0%", 
+                                          "width" : "0%"
+                                          });
+            }
+        }
+    } else {
+    	all    = $(objStr).getElementsByTagName('td');
+        divAll = $(objStr).getElementsByTagName('div');
+        for (var i = 0; i < all.length; i++) {
+		    if (0 <= (' ' + all[i].className + ' ').indexOf(' todo ')) {
+			    Element.setStyle(all[i],  {"height": rowHeight + "px", "width": rowWidth + "px"});
+            }
+        }
+        for (var i = 0; i < divAll.length; i++) {
+		    if (0 <= (' ' + divAll[i].className + ' ').indexOf(' todo ')) {
+			    Element.setStyle(divAll[i],  {"width": rowWidth + "px"});
+            }
+        }
+    }
+}
+
+
+
+
+/**********************************************************
+ * マウスホイールで大きさ変更 + ポップアップ表示で日を変える  *
+ **********************************************************/
+Object.extend(Event, 
+  {
+	wheel:function (event){
+		var delta = 0;
+		if (!event) event = window.event;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta/120; 
+			if (window.opera) delta = -delta;
+		} else if (event.detail) { delta = -event.detail/3;	}
+		return Math.round(delta); //Safari Round
+	}
+  }
+);
+
+function wheelHandler(event) {
+	var delta = Event.wheel(event);
+    // ポップアップ表示されている場合
+    if (isWheelZoom == false){
+        popupMove(delta);
+        return;
+    }
+
+    // 拡大率 
+	var zoomRate = 100.0;
+	var all = document.getElementsByTagName('*');
+	var widthString = "";
+	var heightString = "";
+	var topString = "";
+	var leftString = "";
+	var width = 0;
+	var height = 0;
+	var top = 0;
+	var left = 0;
+
+	// td.todo の大きさを調整するために使用する変数
+	var todoHeight = 0;
+	var todoHeightSaveFlag = false;
+
+	// ホイールを回転させたマウスカーソルの、div#right上の位置を保存
+	var mouseCursorPosX = parseFloat(event.pointerX()) - parseFloat(Element.getStyle($("right"),"left"));
+	var mouseCursorPosY = parseFloat(event.pointerY()) - parseFloat(Element.getStyle($("right"),"top"));
+
+	if (delta < 0){
+    // 下方向にまわした場合の処理
+        drawwingHeight = drawwingHeight + zoomRate;
+        drawwingWidth  = drawwingWidth + zoomRate;
+	} else {
+    // 上方向にまわした場合の処理
+        drawwingHeight = drawwingHeight - zoomRate;
+        drawwingWidth  = drawwingWidth - zoomRate;
+	}
+
+    // 大きさと位置を調整する
+    var centralCalendarPositionX = parseFloat(Element.getStyle($(centralCalendarId), "left"));
+    var centralCalendarPositionY = parseFloat(Element.getStyle($(centralCalendarId), "top"));
+	var all = $("right").getElementsByTagName('table');
+    for (var i = 0; i < 9; i++) {
+		switch ( parseInt(all[i].id) - parseInt($(centralCalendarId).id) ){
+			// 左上
+			case -189:
+			case -101:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX - drawwingWidth  / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY - drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+			// 上
+			case -100:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + "px",
+		                         "top"   :   centralCalendarPositionY - drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+			// 右上
+			case -99:
+			case -11:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + drawwingWidth  / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY - drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+			// 左
+			case -1:
+			case -89:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX - drawwingWidth / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY + "px"
+		                         });
+				break;
+			// 真ん中
+	    	case 0:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + "px",
+		                         "top"   :   centralCalendarPositionY + "px"
+		                         });
+				break;
+			// 右
+			case 1:
+			case 89:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + drawwingWidth / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY + "px"
+		                         });
+				break;
+			// 左下
+			case 11:
+			case 99:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX - drawwingWidth  / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY + drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+			// 下
+			case 100:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + "px",
+		                         "top"   :   centralCalendarPositionY + drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+			// 下右（波動拳）
+			case 101:
+			case 189:
+		        Element.setStyle(all[i],  {"height": drawwingHeight  + "px", 
+		                         "width" :   drawwingWidth + "px",
+		                         "left"  :   centralCalendarPositionX + drawwingWidth  / 0.95 + "px",
+		                         "top"   :   centralCalendarPositionY + drawwingHeight / 0.95 + "px"
+		                         });
+				break;
+		}
+    }
+    
+    // tdの高さとかを調整する
+    calendarSizeArranger('calendar');
+
+
+
+    
+    // マウスカーソルを中心とした拡大を実現するための部分
+
+/*
+	var changedTableSizeX = parseInt(tablePostWidth)  - parseInt(tablePreviousWidth);
+	var changedTableSizeY = parseInt(tablePostHeight) - parseInt(tablePreviousHeight);
+	var nextPositionX = parseInt(Element.getStyle($("calendar"),"left")) - 
+	                    mouseCursorPosX*(changedTableSizeX / parseInt(tablePreviousWidth));
+	var nextPositionY = parseInt(Element.getStyle($("calendar"),"top")) - 
+	                    mouseCursorPosY*(changedTableSizeY / parseInt(tablePreviousHeight));
+*/
+
+	// イベントによる default 動作（ページ遷移など）を無効化する
+	if (event.preventDefault) {
+	    event.preventDefault();
+	}
+	else {
+	    event.returnValue = false;
+	}
+}
+
+
+/*************************
+ *   日表示をポップアップ  *
+ *************************/
+function dayDisplayPopup(date) {
+    // すでにdayDisplayがあるかどうかチェック。あったら消す
+    if ($('dayDisplay') != null){
+        dayDisplayClose();
+    }
+    //  ホイールで拡縮を無効化
+    isWheelZoom = false;
+    
+    var t = document.createElement('div');
+    t.id = "dayDisplay";
+    t.style.height = "0px";
+    t.style.width  = "0px";
+    t.style.left   = "-100px";
+    t.style.top    = "-100px";
+
+
+    $('right').appendChild(t);
+    var tmpHeight;
+    var tmpWidth;
+    var tmpTop;
+    var tmpLeft;
+/*
+    if(navigator.userAgent.indexOf("Gecko") != -1) {
+        tmpWidth  = parseFloat(window.innerWidth)  * 0.7;
+        tmpTop = (parseFloat(window.innerHeight) - 60) * 0.25;
+        tmpLeft = parseFloat(window.innerWidth)  * 0.15;
+    } else {
+        tmpWidth  = parseFloat(document.body.clientWidth)  * 0.7;
+        tmpTop = (parseFloat(document.body.clientWidth) - 60) * 0.25;
+        tmpLeft = parseFloat(document.body.clientWidth)  * 0.15;
+    }
+    if (tmpTop < 0) tmpTop = 60.0;
+    // 0.000001よりも桁が小さい値だと、setStyleするときにエラーになる（値が設定されない）ので、値を手動で丸める
+    tmpWidth = Math.floor(tmpWidth * 100000) / 100000;
+    tmpTop   = Math.floor(tmpTop *  100000) / 100000;
+    tmpLeft  = Math.floor(tmpLeft *  100000) / 100000;
+
+    Element.setStyle($('dayDisplay'),
+            {"height" : 0 + "px",
+             "width"  : tmpWidth + "px",
+             "top"    : tmpTop + "px",
+             "left"   : tmpLeft + "px"});
+*/
+	if(navigator.userAgent.indexOf("Gecko") != -1)	{
+	    tmpWidth = parseFloat(window.innerWidth);
+	    tmpHeight = parseFloat(window.innerHeight) - 60;
+    } else {
+	    tmpWidth = parseFloat(document.body.clientWidth);
+	    tmpHeight = parseFloat(document.body.clientHeight) - 60;
+    }
+    tmpWidth  = tmpWidth  * 0.95;
+    tmpHeight = tmpHeight * 0.95;
+
+    // ポップアップ用のウィンドウサイズを設定する
+    popupWidth = tmpWidth * 0.70;
+    popupHeight = tmpHeight * 0.50;
+    if (popupHeight < 0) popupHeight = 60.0;
+
+    // 0.000001よりも小さい値だと、setStyleするときにエラーになる（値が設定されない）ので、値を手動で丸める
+    popupWidth = Math.floor(popupWidth * 100000) / 100000;
+    popupHeight   = Math.floor(popupHeight *  100000) / 100000;
+
+    // そのテーブル要素に入れるものを作成する
+    new Ajax.Updater("dayDisplay", '/calendar/popupDayCalendar/' + date,
+                      {asynchronous:true,
+                       evalScripts:true, 
+                       parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                      }
+                     );
+    mouseHandler.add('dayDisplay');
+}
+
+// 日表示を消す
+function dayDisplayClose() {
+    // popDays が移動中の場合は日表示を消さない
+    for (var i = 0; i < objStrArray.length; i++){
+        if (objStrArray[i] == "popDays"){
+            return;
+        }
+    }
+    mouseHandler.remove('dayDisplay');
+    $('dayDisplay').parentNode.removeChild($('dayDisplay'));
+    isWheelZoom = true;
+    popupMaxDay = "";
+    popupMinDay = "";
+    // ポップアップの次週読み込みしきい値
+    popupReadNextValue = - popupWidth * 14
+    popupReadBeforeValue = 0;
+    // ポップアップ次週読み込み時に使用する。以前のカレンダーを退避させるために使う
+    hideOldDays = "";
+    allDelta = 0;
+    currentDayNum = 7;
+    popupDayHeights = new Array();
+    movingCount =  new Array();
+    objStrArray = new Array();
+}
+
+/****************************************************************
+ * 未来の日付（7日分）を読み込む
+ * date: 20080808などの日付。
+ *       いま表示されているもののなかで、もっとも新しい日付が入る
+ ****************************************************************/
+function readNextDays(date){
+    var year  = parseInt(date.substr(0,4));
+    var month = eval(date.substr(4,2)) - 1;
+    var day   = eval(date.substr(6,2));
+    var dateObject = new Date(year, month, day);
+
+    // 次のdiv要素を作成し、追加する div#20081009　など
+    var dateString;
+    for (var i = 0; i < 7; i++){
+        dateString = "";
+        dateObject.setDate(dateObject.getDate() + 1);
+        dateString = dateObject.getFullYear();
+        if (dateObject.getMonth() < 9){
+            dateString = dateString + "0" + (dateObject.getMonth() + 1);
+        } else {
+            dateString = "" +  dateString + (dateObject.getMonth() + 1);
+        }
+        if (dateObject.getDate() < 10){
+            dateString = dateString + "0" + dateObject.getDate();
+        } else {
+            dateString = "" + dateString + dateObject.getDate();
+        }
+
+        var t = document.createElement('div');
+        t.id = dateString;
+
+        Element.setStyle(t,
+                         {"top" : "0px",
+                          "left": parseFloat(Element.getStyle($(popupMaxDay), "left")) + popupWidth * (i + 1) + "px",
+                          "width": popupWidth + "px"
+                          });
+        $('popDays').appendChild(t);
+        // そのテーブル要素に入れるものを作成する
+        new Ajax.Updater(dateString, '/calendar/addPopupDayNext/' + dateString,
+                          {asynchronous:true,
+                           evalScripts:true, 
+                           parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+    }
+    // 最新年月日と更新しきい値（未来方向）を更新する
+    popupMaxDay = dateString;
+    popupReadNextValue = popupReadNextValue - popupWidth * 7;
+}
+
+/*
+ * 過去の日付（7日分）を読み込む
+ * date: 20080808などの日付。
+ *       いま表示されているもののなかで、もっとも古い日付が入る
+ */
+
+function readBeforeDays(date){
+    var year  = parseInt(date.substr(0,4));
+    var month = eval(date.substr(4,2)) - 1;
+    var day   = eval(date.substr(6,2));
+    var dateObject = new Date(year, month, day);
+
+    // 次のdiv要素を作成し、追加する div#20081009　など
+    var dateString;
+    for (var i = 0; i < 7; i++){
+        dateString = "";
+        dateObject.setDate(dateObject.getDate() - 1);
+        dateString = dateObject.getFullYear();
+        if (dateObject.getMonth() < 9){
+            dateString = dateString + "0" + (dateObject.getMonth() + 1);
+        } else {
+            dateString = "" +  dateString + (dateObject.getMonth() + 1);
+        }
+        if (dateObject.getDate() < 10){
+            dateString = dateString + "0" + dateObject.getDate();
+        } else {
+            dateString = "" + dateString + dateObject.getDate();
+        }
+
+        var t = document.createElement('div');
+        t.id = dateString;
+        Element.setStyle(t,
+                         {"top" : "0px",
+                          "left": parseFloat(Element.getStyle($(popupMinDay), "left")) - popupWidth * (i + 1) + "px",
+                          "width": popupWidth + "px"
+                          });
+        $('popDays').appendChild(t);
+
+        // そのテーブル要素に入れるものを作成する
+        new Ajax.Updater(dateString, '/calendar/addPopupDayBefore/' + dateString,
+                          {asynchronous:true,
+                           evalScripts:true, 
+                           parameters:'authenticity_token=' + encodeURIComponent(authToken)
+                          }
+                         );
+    }    
+    
+    // 最新年月日と更新しきい値（未来方向）を更新する
+    popupMinDay = dateString;
+    popupReadBeforeValue = popupReadBeforeValue + popupWidth * 7;
+}
+
+/* div#dayDisplayの高さを調整するメソッド
+   dayHeight >= 0 なら未来の日付の高さ
+   dayHeight < 0 なら過去の日付の高さ
+ */
+function popupDayHeightsWriter(dayHeight){
+    if ( dayHeight >= 0 ){
+        popupDayHeights.push(dayHeight);
+    } else {
+        popupDayHeights.unshift(Math.abs( - dayHeight));
+        currentDayNum++;
+    }
+}
+
+
+/*******************************
+ * ホイールでpopDaysを動かす関数 *
+ *******************************/
+
+function popupMove(delta){
+    if (delta < 0){
+    // 下方向にまわした場合の処理
+        // 要素が移動中でない場合
+        if (elementMover('popDays', - popupWidth, 0, 200) == true){
+            // 端数のせいでうまく比較できないことがあるのであえてparseIntしてある
+            if ( parseInt(Element.getStyle($('popDays'), "left")) - popupWidth <= parseInt(popupReadNextValue)){
+                // 次を読み込む処理を入れる
+                readNextDays(popupMaxDay);
+            }
+            currentDayNum = currentDayNum + 1;
+            // 高さ配列に値が入っていない場合
+            if ( popupDayHeights.length - 1 <= currentDayNum || currentDayNum < 0 ){
+                Element.setStyle($('dayDisplay'), {"height" : popupHeight + "px"});
+            } else {
+                Element.setStyle($('dayDisplay'), {"height" : popupDayHeights[currentDayNum] + "px"});
+            }
+        }
+        
+    } else {
+    // 上方向にまわした場合の処理
+        // 要素が移動中でない場合
+        if (elementMover('popDays', popupWidth, 0, 200) == true){
+            // 端数のせいでうまく比較できないことがあるのであえてparseIntしてある
+            if ( parseInt(Element.getStyle($('popDays'), "left")) + popupWidth>= parseInt(popupReadBeforeValue) ){
+            // 次を読み込む処理を入れる
+                readBeforeDays(popupMinDay);
+            }
+            currentDayNum = currentDayNum - 1;
+            // 高さ配列に値が入っていない場合
+            if ( popupDayHeights.length - 1 <= currentDayNum || currentDayNum < 0 ){
+                Element.setStyle($('dayDisplay'), {"height" : popupHeight + "px"});
+            } else {
+                Element.setStyle($('dayDisplay'), {"height" : popupDayHeights[currentDayNum] + "px"});
+            }
+        }
+    }
+}
+
+/*******************
+ * 要素を動かす関数 *
+ *******************/
+
+var g_IdViser = new Array();
+var g_NumViser = 0;
+var g_i = 0;
+var movingCount =  new Array();
+var objStrArray = new Array();
+
+function elementMover(objStr, leftDistance, topDistance, miliSecond){
+    // objStrが移動中の場合は、移動が終わるまで待つ
+    for (var i = 0; i < objStrArray.length; i++){
+        if (objStrArray[i] == objStr){
+            return false;
+        }
+    }
+    objStrArray.push(objStr);
+	var smooth = 10;
+	var drawMaxCount = miliSecond / smooth;
+	var leftVelocity = leftDistance / drawMaxCount;
+	var topVelocity  = topDistance  / drawMaxCount;
+	movingCount[g_NumViser] = 0;
+	var leftPosition = parseFloat(Element.getStyle($(objStr), 'left'));
+	var topPosition  = parseFloat(Element.getStyle($(objStr), 'top'));
+	$('debug01').innerHTML = leftPosition + " " + topPosition;
+	strFunc = "" + 
+		"var left = " + leftPosition + " + (" + leftVelocity + ") * (movingCount[" + g_NumViser + "] + 1 );" +
+		"var top  = " + topPosition  + " + (" + topVelocity + ")  * (movingCount[" + g_NumViser + "] + 1 );" +
+		"Element.setStyle($('" + objStr + "'), {'left' : left + 'px', 'top'  : top  + 'px'});" + 
+//		"$('debug01').innerHTML = Element.getStyle($('" + objStr + "'), 'left') + ' ' +" + setLeft + ";" +
+		"movingCount[" + g_NumViser + "]++;" + 
+		"if (movingCount[" + g_NumViser + "] >= parseInt(" +  drawMaxCount + ")){" + 
+			"clearInterval(g_IdViser[" + g_NumViser + "]);" +
+			
+            "for (var i = 0; i < objStrArray.length; i++){" + 
+                "if (objStrArray[i] =='" +  objStr + "'){" +
+                    "objStrArray[i] = '';" +
+                "}" +
+            "}" +
+		"}";
+    g_IdViser[g_NumViser] = setInterval( strFunc , smooth);
+    g_NumViser++;
+    return true;
+}
+
+/**********************************
+ * 要素の高さを徐々に変化させる関数 *
+ **********************************/
+
+function elementHeightChanger(objStr, firstHeight, finalHeight, miliSecond){
+    // objStrが動作中の場合は、動作が終わるまで待つ
+    for (var i = 0; i < objStrArray.length; i++){
+        if (objStrArray[i] == objStr){
+            return false;
+        }
+    }
+    objStrArray.push(objStr);
+	var smooth = 10;
+	var drawMaxCount = miliSecond / smooth;
+	var heightVelocity = (finalHeight - firstHeight)/ drawMaxCount;
+	movingCount[g_NumViser] = 0;
+	strFunc = "" + 
+		"var height  =  " + firstHeight + " + (" + heightVelocity + ") * (movingCount[" + g_NumViser + "] + 1 );" +
+		"Element.setStyle($('" + objStr + "'), {'height' : height + 'px'});" + 
+		"movingCount[" + g_NumViser + "]++;" + 
+		"if (movingCount[" + g_NumViser + "] >= parseInt(" +  drawMaxCount + ")){" + 
+			"clearInterval(g_IdViser[" + g_NumViser + "]);" +
+			
+            "for (var i = 0; i < objStrArray.length; i++){" + 
+                "if (objStrArray[i] =='" +  objStr + "'){" +
+                    "objStrArray[i] = '';" +
+                "}" +
+            "}" +
+		"}";
+    g_IdViser[g_NumViser] = setInterval( strFunc , smooth);
+    g_NumViser++;
+    return true;
+}

@@ -1,0 +1,380 @@
+
+/* カレンダーページのデザイン */
+
+/* クリックした日の予定を表示する領域 */
+div#todo {
+    width: 700px;
+}
+
+/* 月間カレンダー */
+div#calendar {
+	z-index:1;
+	position:absolute;
+	left:0px;
+	top:0px;
+}
+table.month {
+    position:absolute;
+    z-index:10;
+    border: 0px;
+    border-style:dashed;
+	frame: border;
+	rules: all;
+    filter: alpha(opacity=0);
+    -moz-opacity:0.00;
+    opacity:0.00;
+}
+table.month caption{
+    background-color:white;
+}
+div.tableCloth {
+    position:absolute;
+    z-index:11;
+    border: 0px;
+    border-style:dashed;
+    background-color:white;
+    text-align:center;
+	frame: border;
+	rules: all;
+}
+table.month tr {
+}
+table.month th {
+}
+table.month td {
+	border-style:solid;
+    border-width: 1px;
+    width: 1000px;
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+	vertical-align: top;
+    background-color : white;
+}
+table.month td.month {
+	border-style:none;
+    margin  : 0 0 0 0;
+    padding : 0 0 0 0;
+	vertical-align: top;
+}
+table.month div {
+}
+table.month img {
+    position:absolute;
+    z-index :50;
+    width   :100%;
+    height   :100%;
+    cursor    : move;
+    filter    : alpha(opacity=0);
+}
+table.month div.month {
+    position    : relative;
+    z-index     : 70;
+    text-align : center;
+    width       : 100%;
+    height      : 100%;
+    overflow    : hidden;
+}
+/* 曜日を書く場所のスタイル */
+table.month td.wday {
+    margin:0px;
+    padding:0px;
+    border-style:none;
+    position:relative;
+    z-index : 100;
+    height  : 22px;
+    background-color:white;
+}
+table.month div.wday {
+    margin:0px;
+    padding:0px;
+    position:relative;
+    z-index:70;
+    text-align : center;
+    width   :100%;
+    height   :100%;
+    overflow:visible;
+}
+/* 日付を書く場所のスタイル（日付に応じた色変更） */
+table.month td.passed_coming {
+	color:#CFCFCF;
+}
+table.month td.saturday {
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    position:relative;
+    z-index:100;
+    height      : 22px;
+	background-color:#B0E2FF;
+}
+table.month td.sunday {
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    position:relative;
+    z-index:100;
+    height      : 22px;
+	background-color:#FFD39B;
+}
+table.month td.today {
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    position:relative;
+    z-index:100;
+    height      : 22px;
+	text-decoration: underline;
+	background-color:#FFFF00;
+}
+/* 日付を書く場所のスタイル */
+table.month td.date {
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    position:relative;
+    z-index:100;
+    height      : 22px;
+}
+table.month img.date {
+}
+table.month div.date {
+    position:relative;
+    z-index:70;
+    width   :100%;
+    height   :100%;
+    text-align : center;
+    overflow:hidden;
+}
+/* Todoを書く場所のスタイル */
+table.month td.todo {
+    margin:0 0 0 0;
+    padding:0 0 0 0;
+    position:relative;
+    z-index:100;
+    text-align : center;
+    height      : 100px;
+    overflow:hidden;
+}
+table.month img.todo {
+}
+table.month div.todo {
+    position:relative;
+    z-index:70;
+    text-align : center;
+    width   :100%;
+    height   :100%;
+    overflow:hidden;
+}
+table.month td.text {
+    text-align : left;
+}
+
+/* 月間カレンダーをドラッグするための領域 */
+img#dragLayer {
+    /* IE用 */
+    z-index  : 1;
+    position : absolute;
+    width     : 100%;
+    height    : 100%;
+    top       : 0px;
+    left      : 0px;
+    cursor    : move;
+    background-color: ;
+    /* 透明 にする */
+    filter    : alpha(opacity=0);
+}
+div#dragLayer {
+    /* FF用 */
+    z-index  : 1;
+    position : absolute;
+    width     : 100%;
+    height    : 100%;
+    top       : 0px;
+    left      : 0px;
+    cursor    : move;
+    background-color: ;
+}
+
+/* 日表示のポップアップ枠 */
+div#dayDisplay {
+    z-index : 110;
+    position : absolute;
+    overflow : hidden;
+    border-style:solid;
+    border-width:0px;
+    border-color:white;
+    background-color:white ;
+}
+
+/* 日表示を乗せるdiv */
+div#popDays {
+    z-index : 110;
+    position : absolute;
+    
+}
+div#popDays div{
+    position : absolute;
+}
+
+div#popClose {
+    text-align : right;
+    position : absolute;
+    z-index : 120;
+    background-color:white;
+}
+
+div#nowLoading {
+    top:0px;
+    left:0px;
+    width:100%;
+    height:100%;
+    background-color:white;
+    position:absolute;
+    z-index:10;
+}
+
+img#baloon_top{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_bottom{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_left{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_right{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_top_left{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_top_right{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_bottom_right{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_bottom_left{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:3;
+}
+
+img#baloon_shadow{
+    top:0px;
+    left:0px;
+    position:absolute;
+    z-index:2;
+}
+
+
+/********************
+ *  携帯用カレンダー *
+ ********************/
+table.mobile{
+    border-style      : solid;
+    border-width      : 0px;
+    border-color      : black;
+    width              : 100%;
+}
+
+table.mobile tr{
+    border-style      : dotted;
+    border-color      : black;
+    border-bottom-width : 1px;
+    border-top-width    : 0px;
+    border-left-width   : 0px;
+    border-right-width  : 0px;
+}
+
+table.mobile tr.blue{
+    background-color  : #E5ECF9;
+    border-style      : dotted;
+    border-color      : black;
+    border-bottom-width : 1px;
+    border-top-width    : 0px;
+    border-left-width   : 0px;
+    border-right-width  : 0px;
+}
+
+table.mobile td.delete{
+    width : 10px;
+}
+
+table.mobile td.before{
+    width : 50%;
+}
+
+table.mobile td.next{
+    width       : 50%;
+    text-align : right;
+}
+
+/******************
+ * 週間カレンダー  *
+ ******************/
+div#weekly_calendar {
+    width: 700px;
+	/* background:#8FCCAE; */
+}
+div#weekly_calendar table {
+    border: 1px;
+	border-style:solid;
+	frame: border;
+	rules: all;
+}
+div#weekly_calendar tr {
+    width: 700px;
+}
+div#weekly_calendar th {
+}
+div#weekly_calendar tbody {
+	align: right;
+}
+div#weekly_calendar td {
+	border-style:solid;
+    border-width: 1px;
+	text-align: left;
+	vertical-align: top;
+}
+
+div#weekly_calendar td.passed_coming {
+	color:#CFCFCF;
+}
+div#weekly_calendar td.saturday {
+	background-color:#B0E2FF;
+}
+div#weekly_calendar td.sunday {
+	background-color:#FFD39B;
+}
+div#weekly_calendar td.today {
+	text-decoration: underline;
+	background-color:#FFFF00;
+}
+
+

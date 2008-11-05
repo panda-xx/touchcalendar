@@ -1,0 +1,277 @@
+
+/* 共通のデザイン */
+
+/* ページ全体 */
+body {
+    background-color: white;
+    color: black;
+    margin: 0 0 0 0;
+	padding: 0 0 0 0;
+	/* ↓これがないとIEでbodyがheight=0pxになってしまう */
+	height:100%;
+	width:100%;
+}
+
+
+/* リンク */
+a:link {
+    color: #5E8EAB;
+    text-decoration:none;
+}
+a:visited {
+    color: #5E8EAB;
+    text-decoration:none;
+}
+a img {
+    border: none;
+}
+
+/* 各部のデザイン */
+
+/* 全体の枠 */
+div#container {
+	position:absolute;
+	left:0;
+	top:0;
+	z-index:200;
+    width: 100%;
+	height:100%;
+    margin: 0 auto;
+    padding: 0 0 auto;
+}
+
+/* ヘッダ部分 */
+div#header {
+	position:absolute;
+	left:0;
+	top:0;
+	z-index:200;
+	background-color:white;
+    color: #5E8EAB;
+    width: 100%;
+    margin: 0 0 0 0;
+	border-bottom: solid;
+	border-color: white;
+	border-width: 2px;
+}
+
+/* タイトル */
+div#title {
+	position:relative;
+	z-index:200;
+	background-color:white;
+	border-bottom-style:dotted;
+    float: left;
+    color: #5E8EAB;
+    width: 100%;
+    height: 22px;
+    font-size: 18px;
+}
+
+/* メニューバー */
+div#menu_bar {
+	position:relative;
+	z-index:200;
+    float: left;
+    color: #5E8EAB;
+    width: 100%;
+	height:40px;
+}
+
+/* メニューバーのリンク */
+div#menu_bar a {
+    text-decoration: none;
+}
+/* メニューバーのリンク（未訪問） */
+div#menu_bar a:link {
+    color: #ccc;
+}
+/* メニューバーのリンク（訪問済） */
+div#menu_bar a:visited {
+    color: #7EBECB;
+}
+/* メニューバーのリンク（マウスを合わせたとき） */
+div#menu_bar a:hover {
+    color: #f88;
+    border-bottom: 1px dotted #f88;
+}
+/* メニューバーのリンク（現在のページ） */
+div#menu_bar span.current_page {
+    color: #5E8EAB;
+    font-weight: bold;
+}
+/* メニューバーのリンク（使用不可） */
+div#menu_bar span.disabled {
+    color: #888;
+}
+/* 動くカレンダーを入れるためのdiv。 */
+div#draggableCalendarBase{
+	position:absolute;
+	left:210;
+	top:100px;
+	z-index:1;
+    background-color: white;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+	height:100%;
+    width: 100%;
+}
+
+/* 左の枠（サイドバーを入れる） */
+div#left {
+	position:absolute;
+	z-index:1100;
+	left:0px;
+	top:62px;
+    width: 200px;
+	height: 100%;
+	background-color: white;
+	border-right: dashed;
+	border-color: black;
+	border-width: 1px;
+    padding: 0 0 0 0px;
+}
+/* 右の枠（コンテンツを入れる） */
+div#right {
+	position:relative;
+	z-index:1;
+	left:200px;
+	top:60px;
+    height: 100%;
+    padding: 6px 6px 6px 6px;
+}
+/* フッター */
+div#footer {
+    clear: both;
+    font: 80% Verdana;
+    color: #888;
+    padding: 8px 0;
+    border-top: 4px solid #DFEFFF;
+}
+
+/* 新着情報 */
+div#whats_new {
+    padding: 4px;
+    background-color: #46a;
+    margin-bottom: 4px;
+    color: #fff;
+}
+div#whats_new h2 {
+    color: #fff;
+    font: bold 120% Verdana;
+    border-bottom: 2px dotted #fff;
+    font-size: 120%;
+    margin: 4px 10px;
+}
+div#whats_new ul li {
+    padding: 2px;
+    font-size: 90%;
+}
+div#whats_new a {
+    color: white;
+}
+
+/* メインコンテンツ */
+div#main {
+    padding: 4px;
+}
+div#main h1 {
+    color: #D0D0D0;
+    font-weight: normal;
+    font-size: 150%;
+    border-bottom: 2px solid #D0D0D0;
+    margin: 6px 0 15px;
+}
+div#main h2 {
+    color: #9AF;
+    font-weight: bold;
+    font-size: 120%;
+    margin: 10px 0px;
+    text-align: center;
+}
+div#main h3 {
+    color: #88c;
+    font-weight: bold;
+    font-size: 100%;
+    margin: 10px 0;
+    border-top: 1px solid #ccf;
+}
+div#main h4 {
+    color: red;
+    font-weight: bold;
+    font-size: 100%;
+    margin: 10px 0;
+}
+div#main p, div#main ul {
+    font-size: 90%;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    line-height: 1.5;
+}
+div#main a:hover {
+    color: #ccf;
+    background: #004;
+}
+
+/* 小さい写真の背景 */
+div#image_back {
+    background: #004;
+    
+}
+.green #slatenav{
+	position:relative;
+	display:block;
+	height:42px;
+	width:100%;
+	font-size:11px;
+	font-weight:bold;
+	background:transparent url(/images/greenslate_background.gif) repeat-x top left;	
+	font-family:Arial,Verdana,Helvitica,sans-serif;
+	text-transform:uppercase;
+}
+
+.green #slatenav ul{
+	margin:0px;
+	padding:0;
+	list-style-type:none;
+	width:auto;
+}
+
+.green #slatenav ul li{
+	display:block;
+	float:left;
+	margin:0 1px 0 0;
+}
+
+.green #slatenav ul li.account{
+	display:block;
+	float:right;
+	color:#EEFFDF;
+	text-decoration:none;
+	padding:14px 22px 0 22px;
+	height:28px;
+}
+
+.green #slatenav ul li.logout{
+	float:right;
+	color:#EEFFDF;
+	text-decoration:none;
+	height:28px;
+}
+
+.green #slatenav ul li a{
+	display:block;
+	float:left;
+	color:#EEFFDF;
+	text-decoration:none;
+	padding:14px 22px 0 22px;
+	height:28px;
+}
+
+.green #slatenav ul li a:hover,
+
+.green #slatenav ul li a.current{
+	color:#fff;
+	background:transparent url(/images/greenslate_backgroundOVER.gif) no-repeat top center;
+}
+
